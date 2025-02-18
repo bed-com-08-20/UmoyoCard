@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'timeline_screen.dart'; // Import the TimelineScreen
 
 class RecordScreen extends StatelessWidget {
   const RecordScreen({Key? key}) : super(key: key);
@@ -23,7 +24,6 @@ class RecordScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Centered subtitle
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16.0),
               child: Text(
@@ -31,7 +31,6 @@ class RecordScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
-
             // Grid layout for record cards
             Expanded(
               child: Column(
@@ -43,7 +42,7 @@ class RecordScreen extends StatelessWidget {
                           context,
                           'Timeline',
                           Icons.timeline,
-                          Container(),
+                          const TimelineScreen(), // Navigate to TimelineScreen
                         ),
                         _buildRecordCard(
                           context,
@@ -105,7 +104,6 @@ class RecordScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.black,
-                  //fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
               ),
