@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:umoyocard/screens/profile_screen.dart';
-import 'package:umoyocard/screens/record_screen.dart';
-import 'package:umoyocard/screens/ocr_screen.dart';
-import 'package:umoyocard/screens/timeline_screen.dart';
+import 'package:umoyocard/screens/profile/profile_screen.dart';
+import 'package:umoyocard/screens/records/record_screen.dart';
+import 'package:umoyocard/screens/home/ocr_screen.dart';
+import 'package:umoyocard/screens/records/timeline_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,7 +14,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // Removed const from widget constructors if they aren't marked as const
+  // The widget options remain unchanged.
   final List<Widget> _widgetOptions = <Widget>[
     HomeContent(),
     RecordScreen(),
@@ -64,7 +64,9 @@ class _HomeScreenState extends State<HomeScreen> {
 class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    // The quick links have been reduced to four:
+    // "Scan Health Passport", "Recent Timeline", "Blood Pressure", and "Blood Sugar".
+    return SafeArea(
       child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
@@ -80,30 +82,49 @@ class HomeContent extends StatelessWidget {
               style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.0),
-            GridView.builder(
-              shrinkWrap: true,
-              itemCount: quickLinks.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8.0,
-                mainAxisSpacing: 8.0,
+            // Instead of a GridView.builder, we now structure the cards like RecordScreen.
+            Expanded(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        _buildQuickLinkCard(
+                          context,
+                          'Scan Health Passport',
+                          Icons.qr_code_scanner,
+                          () => _handleQuickLinkTap(
+                              context, 'Scan Health Passport'),
+                        ),
+                        _buildQuickLinkCard(
+                          context,
+                          'Recent Timeline',
+                          Icons.timeline,
+                          () => _handleQuickLinkTap(context, 'Recent Timeline'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        _buildQuickLinkCard(
+                          context,
+                          'Blood Pressure',
+                          Icons.favorite,
+                          () => _handleQuickLinkTap(context, 'Blood Pressure'),
+                        ),
+                        _buildQuickLinkCard(
+                          context,
+                          'Blood Sugar',
+                          Icons.medical_services,
+                          () => _handleQuickLinkTap(context, 'Blood Sugar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              physics: NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) {
-                final quickLink = quickLinks[index];
-                if ((quickLink['label'] as String) == 'Recent Timeline') {
-                  return RecentTimelineCard(
-                    onTap: () =>
-                        _handleQuickLinkTap(context, 'Recent Timeline'),
-                  );
-                }
-                return _QuickLinkCard(
-                  icon: quickLink['icon'] as IconData,
-                  label: quickLink['label'] as String,
-                  onTap: () => _handleQuickLinkTap(
-                      context, quickLink['label'] as String),
-                );
-              },
             ),
           ],
         ),
@@ -111,6 +132,51 @@ class HomeContent extends StatelessWidget {
     );
   }
 
+  /// Builds a quick link card. When the title is "Recent Timeline",
+  /// it returns the [RecentTimelineCard] (which has the dynamic refresh functionality);
+  /// otherwise it returns a standard card.
+  Widget _buildQuickLinkCard(
+      BuildContext context, String title, IconData icon, VoidCallback onTap) {
+    if (title == 'Recent Timeline') {
+      return Expanded(
+        child: RecentTimelineCard(
+          onTap: onTap,
+        ),
+      );
+    }
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade100,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.blue, size: 30),
+              SizedBox(height: 10),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Handles the tap actions for each quick link.
+  /// "Scan Health Passport" navigates to [OCRScreen],
+  /// "Recent Timeline" navigates to [TimelineScreen],
+  /// and other cards show a snackbar.
   void _handleQuickLinkTap(BuildContext context, String label) {
     if (label == 'Scan Health Passport') {
       Navigator.push(
@@ -130,16 +196,14 @@ class HomeContent extends StatelessWidget {
   }
 }
 
+/// (Optional) A separate quick link card widget, if needed elsewhere.
+/// Here it remains unchanged from your original code.
 class _QuickLinkCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
 
-  _QuickLinkCard({
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
+  _QuickLinkCard({required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -165,17 +229,16 @@ class _QuickLinkCard extends StatelessWidget {
   }
 }
 
+// The quickLinks constant has been updated to remove Heart Rate and Weight.
 const quickLinks = [
   {'icon': Icons.qr_code_scanner, 'label': 'Scan Health Passport'},
   {'icon': Icons.timeline, 'label': 'Recent Timeline'},
   {'icon': Icons.favorite, 'label': 'Blood Pressure'},
   {'icon': Icons.medical_services, 'label': 'Blood Sugar'},
-  {'icon': Icons.monitor_heart, 'label': 'Heart Rate'},
-  {'icon': Icons.accessibility, 'label': 'Weight (tikambirana izi)'},
 ];
 
-/// A stateful RecentTimelineCard that retrieves and displays the latest saved text.
-/// It refreshes its content periodically so that newly saved records are shown almost instantly.
+/// The RecentTimelineCard remains unchanged so that it
+/// refreshes its content periodically as before.
 class RecentTimelineCard extends StatefulWidget {
   final VoidCallback? onTap;
   const RecentTimelineCard({Key? key, this.onTap}) : super(key: key);
@@ -192,7 +255,7 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
   void initState() {
     super.initState();
     _fetchLatestText();
-    // Refresh every 2 seconds. Adjust the duration as needed.
+    // Refresh every 2 seconds.
     _timer = Timer.periodic(Duration(seconds: 2), (timer) {
       _fetchLatestText();
     });
@@ -217,16 +280,16 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
     return InkWell(
       onTap: widget.onTap,
       child: Container(
-        padding: EdgeInsets.all(8.0),
+        margin: EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: Colors.blue.shade50,
-          borderRadius: BorderRadius.circular(8.0),
-          border: Border.all(color: Colors.blue.shade100),
+          color: Colors.blue.shade100,
+          borderRadius: BorderRadius.circular(10),
         ),
+        padding: EdgeInsets.all(8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Heading at the very top inside the card.
             Text(
               "Recent Timeline",
               style: TextStyle(
@@ -236,7 +299,6 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
               ),
             ),
             SizedBox(height: 8.0),
-            // Display all the text fields (without truncation).
             Text(
               _latestText,
               style: TextStyle(fontSize: 12.0, color: Colors.black87),
