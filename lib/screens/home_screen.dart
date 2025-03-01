@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:umoyocard/screens/blood_sugar_screen.dart';
 import 'package:umoyocard/screens/profile_screen.dart';
 import 'package:umoyocard/screens/record_screen.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -10,7 +13,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  static List<Widget> _widgetOptions = <Widget>[
+  static final List<Widget> _widgetOptions = <Widget>[
     HomeContent(),
     RecordScreen(),
     ProfileScreen(),
@@ -57,6 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class HomeContent extends StatelessWidget {
+  const HomeContent({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -107,7 +112,17 @@ class _QuickLinkCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return 
+    GestureDetector(
+       onTap: () {
+        if (label == 'Blood Sugar') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const BloodSugarScreen()),
+          );
+        }
+       },
+       child:  Container(
       padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
         color: Colors.blue.shade50,
@@ -122,6 +137,7 @@ class _QuickLinkCard extends StatelessWidget {
           Text(label, style: const TextStyle(fontSize: 14.0)),
         ],
       ),
+    ),
     );
   }
 }
@@ -133,4 +149,5 @@ const quickLinks = [
   {'icon': Icons.medical_services, 'label': 'Blood Sugar'},
   {'icon': Icons.monitor_heart, 'label': 'Heart Rate'},
   {'icon': Icons.accessibility, 'label': 'Weight (tikambirana izi)'},
+  
 ];
