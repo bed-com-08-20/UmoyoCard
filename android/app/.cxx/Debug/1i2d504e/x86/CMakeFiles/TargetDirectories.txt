@@ -1,0 +1,2 @@
+C:/Users/wadim/OneDrive/Documents/projects/ict_finale_project/UmoyoCard/android/app/.cxx/Debug/1i2d504e/x86/CMakeFiles/edit_cache.dir
+C:/Users/wadim/OneDrive/Documents/projects/ict_finale_project/UmoyoCard/android/app/.cxx/Debug/1i2d504e/x86/CMakeFiles/rebuild_cache.dir
