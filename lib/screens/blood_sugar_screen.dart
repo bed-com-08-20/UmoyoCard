@@ -1,8 +1,6 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:umoyocard/screens/home_screen.dart';
 
@@ -72,9 +70,9 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                 status = 'Low';
               } else if (value >= 3.9 && value <= 5.6) {
                 status = 'Normal';
-              } else if (value >= 5.7 && value <= 6.9) {
+              } else if (value >= 5.7 && value < 6.9) {
                 status = 'Prediabetes';
-              } else if (value >= 7.0 && value >= 8.0) {
+              } else if (value >= 6.9 && value <= 90) {
                 status = 'Diabetes';
               }
 
@@ -285,17 +283,6 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                                 child: Text("No other records available"),
                               ),
                       ),
-                    ElevatedButton(
-                      onPressed: _toggleShowAllRecords,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[300],
-                        minimumSize: Size(double.infinity, 50),
-                      ),
-                      child: Text(
-                        showAllRecords ? 'Show Less' : 'View More',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
                   ],
                 ],
               ),
