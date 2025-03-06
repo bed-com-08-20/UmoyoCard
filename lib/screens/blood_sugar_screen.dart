@@ -21,12 +21,6 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     _loadRecords();
   }
 
-  void _toggleShowAllRecords() {
-    setState(() {
-      showAllRecords = !showAllRecords;
-    });
-  }
-
   void _saveRecords() async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('records', jsonEncode(records));
@@ -40,6 +34,22 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         records = List<Map<String, dynamic>>.from(jsonDecode(savedData));
       });
     }
+  }
+
+  String _determineStatus(double value) {
+    if (value >=1 && value < 2.8) {
+      return 'Below';
+    } else if (value >= 2.8 && value < 3.9) {
+      return 'Low';
+    } else if (value >= 3.9 && value < 5.7) {
+      return 'Normal';
+    } else if (value >= 5.7 && value < 6.9) {
+      return 'Prediabetes';
+    } else if (value >= 6.9 && value <= 90) {
+      return 'Diabetes';
+    }
+
+    throw ArgumentError('Invalid blood sugar value: $value');
   }
 
   void _showAddRecordDialog() {
@@ -61,22 +71,10 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
           ElevatedButton(
             onPressed: () {
               double value = double.tryParse(valueController.text) ?? 0.0;
-              String? status;
+              
+              try {
+                String status = _determineStatus(value);
 
-              //determine status
-              if (value < 2.8) {
-                status = 'Below';
-              } else if (value >= 2.8 && value < 3.9) {
-                status = 'Low';
-              } else if (value >= 3.9 && value <= 5.6) {
-                status = 'Normal';
-              } else if (value >= 5.7 && value < 6.9) {
-                status = 'Prediabetes';
-              } else if (value >= 6.9 && value <= 90) {
-                status = 'Diabetes';
-              }
-
-              if (status != null) {
                 setState(() {
                   records.insert(0, {
                     'value': value,
@@ -86,11 +84,12 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                   _saveRecords();
                 });
                 Navigator.pop(context);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                        'Invalid value! Please enter a valid blood sugar level. ')));
               }
+                catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Invalid value! Please enter a valid blood sugar level. ')));
+              }
+
             },
             child: Text('Add'),
           ),
@@ -211,10 +210,41 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     );
   }
 
+  Widget _buildPreviousRecordsList() {
+    return Expanded(
+      child: ListView.builder(
+        itemCount: records.length - 1,
+        itemBuilder: (context, index) {
+          final record = records[index + 1];
+          return Card(
+            color: Colors.blue[100],
+            margin: EdgeInsets.symmetric(vertical: 8),
+            child: Padding(
+              padding: EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${record['value']} mmol/L',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(record['status']),
+                    ],
+                  ),
+                  SizedBox(height: 15),
+                  Text(record['date']),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool hasPreviousRecords = records.length > 1;
-
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -232,62 +262,19 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
       ),
       body: Column(
         children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  _buildBarChart(),
-                  SizedBox(height: 10),
-                  _buildLatestRecordCard(),
-
-                  // Show More / Show Less logic
-                  if (records.length > 1 || showAllRecords) ...[
-                    if (showAllRecords)
-                      Expanded(
-                        child: hasPreviousRecords
-                            ? ListView.builder(
-                                itemCount: records.length - 1,
-                                itemBuilder: (context, index) {
-                                  final record = records[index + 1];
-                                  return Card(
-                                    color: Colors.blue[100],
-                                    margin: EdgeInsets.symmetric(vertical: 8),
-                                    child: Padding(
-                                      padding: EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text('${record['value']} mmol/L',
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold)),
-                                              Text(record['status']),
-                                            ],
-                                          ),
-                                          SizedBox(height: 5),
-                                          Text(record['date']),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : Padding(
-                                padding: EdgeInsets.all(8),
-                                child: Text("No other records available"),
-                              ),
-                      ),
-                  ],
-                ],
-              ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _buildBarChart(),
+                SizedBox(height: 10),
+                _buildLatestRecordCard(),
+              ],
             ),
           ),
+
+          _buildPreviousRecordsList(),
+          SizedBox(height: 10),
 
           // Add Record Button
           Container(
