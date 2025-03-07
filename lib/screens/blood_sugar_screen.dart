@@ -36,20 +36,55 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     }
   }
 
-    void _deleteRecord(int index) {
-      setState(() {
-        records.removeAt(index);
-        _saveRecords();
-      });
+  Widget _buildRecordCard(Map<String, dynamic> record, int index) {
+    return Card(
+      surfaceTintColor: const Color.fromARGB(255, 245, 246, 248),
+      borderOnForeground: true,
+      semanticContainer: true,
+      color: Colors.blue[100],
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${record['value']} mmol/L',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Row(
+                  children: [
+                    Text(record['status']),
+                    SizedBox(width: 10),
+                    _buildEllipsisMenu(index),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 15),
+            Text(record['date']),
+          ],
+        ),
+      ),
+    );
+  }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Record deleted successfully!')),
-      );
-    }
+  void _deleteRecord(int index) {
+    setState(() {
+      records.removeAt(index);
+      _saveRecords();
+    });
 
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Record deleted successfully!')),
+    );
+  }
 
   String _determineStatus(double value) {
-    if (value >=1 && value < 2.8) {
+    if (value >= 1 && value < 2.8) {
       return 'Below';
     } else if (value >= 2.8 && value < 3.9) {
       return 'Low';
@@ -74,57 +109,60 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         }
       },
       itemBuilder: (context) => [
-        PopupMenuItem(value: 'edit', enabled: true, height: 40, child: Text('Edit')),
-        PopupMenuItem(value: 'delete', enabled: true, height:40, child: Text('Delete')),
+        PopupMenuItem(
+            value: 'edit', enabled: true, height: 40, child: Text('Edit')),
+        PopupMenuItem(
+            value: 'delete', enabled: true, height: 40, child: Text('Delete')),
       ],
     );
   }
 
   void _showEditRecordDialog(int index) {
     TextEditingController valueController =
-      TextEditingController(text: records[index]['value'].toString());
+        TextEditingController(text: records[index]['value'].toString());
 
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Edit Record'),
-          content: TextField(
-            controller: valueController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: 'Blood Sugar Level (mmol/L)'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                double newValue = double.tryParse(valueController.text) ?? 0.0;
-
-                try {
-                  String newStatus = _determineStatus(newValue);
-
-                  setState(() {
-                    records[index]['value'] = newValue;
-                    records[index]['status'] = newStatus;
-                    _saveRecords();
-                  });
-
-                  Navigator.pop(context);
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Invalid value! Please enter a valid blood sugar level.')),
-                  );
-                }
-              },
-              child: Text('Save'),
-            ),
-          ],
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit Record'),
+        content: TextField(
+          controller: valueController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: 'Blood Sugar Level (mmol/L)'),
         ),
-      );
-  }
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              double newValue = double.tryParse(valueController.text) ?? 0.0;
 
+              try {
+                String newStatus = _determineStatus(newValue);
+
+                setState(() {
+                  records[index]['value'] = newValue;
+                  records[index]['status'] = newStatus;
+                  _saveRecords();
+                });
+
+                Navigator.pop(context);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(
+                          'Invalid value! Please enter a valid blood sugar level.')),
+                );
+              }
+            },
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showAddRecordDialog() {
     TextEditingController valueController = TextEditingController();
@@ -145,7 +183,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
           ElevatedButton(
             onPressed: () {
               double value = double.tryParse(valueController.text) ?? 0.0;
-              
+
               try {
                 String status = _determineStatus(value);
 
@@ -158,12 +196,11 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                   _saveRecords();
                 });
                 Navigator.pop(context);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(
+                        'Invalid value! Please enter a valid blood sugar level. ')));
               }
-                catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Invalid value! Please enter a valid blood sugar level. ')));
-              }
-
             },
             child: Text('Add'),
           ),
@@ -183,7 +220,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
       child: BarChart(
         BarChartData(
           barTouchData:
-          BarTouchData(enabled: true, allowTouchBarBackDraw: true),
+              BarTouchData(enabled: true, allowTouchBarBackDraw: true),
           baselineY: 30,
           alignment: BarChartAlignment.spaceAround,
           titlesData: FlTitlesData(
@@ -201,7 +238,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                 ),
               ),
               rightTitles: AxisTitles(
-                sideTitles: SideTitles(
+                  sideTitles: SideTitles(
                 showTitles: false,
                 maxIncluded: true,
                 minIncluded: true,
@@ -252,43 +289,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     if (records.isEmpty) {
       return Text("No records available yet.");
     }
-
-    return Card(
-      surfaceTintColor: const Color.fromARGB(255, 245, 246, 248),
-      borderOnForeground: true,
-      semanticContainer: true,
-      color: Colors.blue[100],
-      margin: EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${records[0]['value']} mmol/L',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                  // textHeightBehavior:
-                  //     TextHeightBehavior(applyHeightToFirstAscent: true),
-                ),
-                Row(
-                  children: [
-                    Text(records[0]['status']),
-                    SizedBox(width: 10),
-                     _buildEllipsisMenu(0)
-
-                ],
-                ),
-              ],
-            ),
-            SizedBox(height: 15),
-            Text(records[0]['date']),
-          ],
-        ),
-      ),
-    );
+    return _buildRecordCard(records[0], 0);
   }
 
   Widget _buildPreviousRecordsList() {
@@ -296,37 +297,10 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
       child: ListView.builder(
         itemCount: records.length > 1 ? records.length - 1 : 0,
         itemBuilder: (context, index) {
-          final recordIndex = index + 1;
-          final record = records[recordIndex];
+          //final recordIndex = index + 1;
+          //final record = records[recordIndex];
 
-          return Card(
-            color: Colors.blue[100],
-            margin: EdgeInsets.symmetric(vertical: 8),
-            child: Padding(
-              padding: EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('${record['value']} mmol/L',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      Row(
-                        children: [
-                          Text(record['status']),
-                          SizedBox(width: 10),
-                          _buildEllipsisMenu(recordIndex),
-                        ],
-                      ),
-                    ],                            
-                  ),
-                  SizedBox(height: 15),
-                  Text(record['date']),
-                ],
-             ),                
-            ),
-          );
+          return _buildRecordCard(records[index + 1], index + 1);
         },
       ),
     );
