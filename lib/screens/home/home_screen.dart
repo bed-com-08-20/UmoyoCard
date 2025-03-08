@@ -188,7 +188,15 @@ class HomeContent extends StatelessWidget {
         context,
         MaterialPageRoute(builder: (context) => TimelineScreen()),
       );
-    } else {
+    } 
+    else if (label == 'Recent Timeline') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => BloodPresureScreen()),
+      );
+    }
+    
+    else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Feature for "$label" is not implemented yet.')),
       );
