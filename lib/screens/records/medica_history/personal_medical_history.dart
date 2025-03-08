@@ -80,6 +80,7 @@ class MedicalCard extends StatelessWidget {
   final String title;
   final Map<String, String> details;
 
+  // ignore: use_super_parameters
   const MedicalCard({
     Key? key,
     required this.title,
