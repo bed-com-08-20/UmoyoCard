@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:umoyocard/screens/home_screen.dart';
+import 'package:umoyocard/screens/home/home_screen.dart';
 
 class BloodSugarScreen extends StatefulWidget {
   const BloodSugarScreen({super.key});
