@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:umoyocard/screens/records/medica_history/personal_medical_history.dart';
 
-class RecordScreen extends StatelessWidget {
-  const RecordScreen({Key? key}) : super(key: key);
+class MedicalHistoryScreen extends StatelessWidget {
+  const MedicalHistoryScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'Records',
+          'Personal Medical History',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -23,15 +23,13 @@ class RecordScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Centered subtitle
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16.0),
               child: Text(
-                "Select a Record to View or Manage",
+                " Please Access the medical History",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
-
             // Grid layout for record cards
             Expanded(
               child: Column(
@@ -40,17 +38,10 @@ class RecordScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         _buildRecordCard(
-                          context,
-                          'Timeline',
-                          Icons.timeline,
-                          Container(),
-                        ),
-                        _buildRecordCard(
-                          context,
-                          'Health Insights',
-                          Icons.insights,
-                          Container(),
-                        ),
+                            context,
+                            'Personal medical History',
+                            Icons.insights,
+                            const PersonalMedicalHistoryScreen()),
                       ],
                     ),
                   ),
@@ -59,14 +50,8 @@ class RecordScreen extends StatelessWidget {
                       children: [
                         _buildRecordCard(
                           context,
-                          'Medical History',
+                          'Family Medical History',
                           Icons.history,
-                          Container(),
-                        ),
-                        _buildRecordCard(
-                          context,
-                          'Shared Data',
-                          Icons.share,
                           Container(),
                         ),
                       ],
@@ -105,7 +90,6 @@ class RecordScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.black,
-                  //fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
               ),
