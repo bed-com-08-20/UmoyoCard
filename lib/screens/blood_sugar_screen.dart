@@ -125,10 +125,18 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Edit Record'),
-        content: TextField(
-          controller: valueController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(labelText: 'Blood Sugar Level (mmol/L)'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: valueController,
+                keyboardType: TextInputType.number,
+                decoration:
+                    InputDecoration(labelText: 'Blood Sugar Level (mmol/L)'),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -294,14 +302,17 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
 
   Widget _buildPreviousRecordsList() {
     return Expanded(
-      child: ListView.builder(
-        itemCount: records.length > 1 ? records.length - 1 : 0,
-        itemBuilder: (context, index) {
-          //final recordIndex = index + 1;
-          //final record = records[recordIndex];
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: ListView.builder(
+          itemCount: records.length > 1 ? records.length - 1 : 0,
+          itemBuilder: (context, index) {
+            //final recordIndex = index + 1;
+            //final record = records[recordIndex];
 
-          return _buildRecordCard(records[index + 1], index + 1);
-        },
+            return _buildRecordCard(records[index + 1], index + 1);
+          },
+        ),
       ),
     );
   }
@@ -324,6 +335,9 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         elevation: 0,
       ),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisSize: MainAxisSize.max,
+        spacing: 0.0,
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
