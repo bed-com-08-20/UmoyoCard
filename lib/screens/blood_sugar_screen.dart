@@ -1,0 +1,359 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:umoyocard/screens/home_screen.dart';
+
+class BloodSugarScreen extends StatefulWidget {
+  const BloodSugarScreen({super.key});
+
+  @override
+  _BloodSugarScreenState createState() => _BloodSugarScreenState();
+}
+
+class _BloodSugarScreenState extends State<BloodSugarScreen> {
+  List<Map<String, dynamic>> records = []; // Start with no records
+  bool showAllRecords = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecords();
+  }
+
+  void _saveRecords() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('records', jsonEncode(records));
+  }
+
+  void _loadRecords() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? savedData = prefs.getString('records');
+    if (savedData != null) {
+      setState(() {
+        records = List<Map<String, dynamic>>.from(jsonDecode(savedData));
+      });
+    }
+  }
+
+  Widget _buildRecordCard(Map<String, dynamic> record, int index) {
+    return Card(
+      surfaceTintColor: const Color.fromARGB(255, 245, 246, 248),
+      borderOnForeground: true,
+      semanticContainer: true,
+      color: Colors.blue[100],
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${record['value']} mmol/L',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Row(
+                  children: [
+                    Text(record['status']),
+                    SizedBox(width: 10),
+                    _buildEllipsisMenu(index),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 15),
+            Text(record['date']),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _deleteRecord(int index) {
+    setState(() {
+      records.removeAt(index);
+      _saveRecords();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Record deleted successfully!')),
+    );
+  }
+
+  String _determineStatus(double value) {
+    if (value >= 1 && value < 2.8) {
+      return 'Below';
+    } else if (value >= 2.8 && value < 3.9) {
+      return 'Low';
+    } else if (value >= 3.9 && value < 5.7) {
+      return 'Normal';
+    } else if (value >= 5.7 && value < 6.9) {
+      return 'Prediabetes';
+    } else if (value >= 6.9 && value <= 90) {
+      return 'Diabetes';
+    }
+
+    throw ArgumentError('Invalid blood sugar value: $value');
+  }
+
+  Widget _buildEllipsisMenu(int index) {
+    return PopupMenuButton<String>(
+      onSelected: (value) {
+        if (value == 'edit') {
+          _showEditRecordDialog(index);
+        } else if (value == 'delete') {
+          _deleteRecord(index);
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+            value: 'edit', enabled: true, height: 40, child: Text('Edit')),
+        PopupMenuItem(
+            value: 'delete', enabled: true, height: 40, child: Text('Delete')),
+      ],
+    );
+  }
+
+  void _showEditRecordDialog(int index) {
+    TextEditingController valueController =
+        TextEditingController(text: records[index]['value'].toString());
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit Record'),
+        content: TextField(
+          controller: valueController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: 'Blood Sugar Level (mmol/L)'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              double newValue = double.tryParse(valueController.text) ?? 0.0;
+
+              try {
+                String newStatus = _determineStatus(newValue);
+
+                setState(() {
+                  records[index]['value'] = newValue;
+                  records[index]['status'] = newStatus;
+                  _saveRecords();
+                });
+
+                Navigator.pop(context);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(
+                          'Invalid value! Please enter a valid blood sugar level.')),
+                );
+              }
+            },
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddRecordDialog() {
+    TextEditingController valueController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Add Record'),
+        content: TextField(
+          controller: valueController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: 'Blood Sugar Level (mmol/L)'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              double value = double.tryParse(valueController.text) ?? 0.0;
+
+              try {
+                String status = _determineStatus(value);
+
+                setState(() {
+                  records.insert(0, {
+                    'value': value,
+                    'status': status,
+                    'date': DateTime.now().toIso8601String().substring(0, 10),
+                  });
+                  _saveRecords();
+                });
+                Navigator.pop(context);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(
+                        'Invalid value! Please enter a valid blood sugar level. ')));
+              }
+            },
+            child: Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBarChart() {
+    return Container(
+      height: 300,
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.blue[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: BarChart(
+        BarChartData(
+          barTouchData:
+              BarTouchData(enabled: true, allowTouchBarBackDraw: true),
+          baselineY: 30,
+          alignment: BarChartAlignment.spaceAround,
+          titlesData: FlTitlesData(
+              show: true,
+              leftTitles: AxisTitles(
+                axisNameWidget: const Text("Blood sugar (mmol/L)"),
+                axisNameSize: 30,
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  interval: 5,
+                  maxIncluded: true,
+                  minIncluded: true,
+                  getTitlesWidget: (value, meta) =>
+                      Text(value.toInt().toString()),
+                ),
+              ),
+              rightTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: false,
+                maxIncluded: true,
+                minIncluded: true,
+              )),
+              topTitles: AxisTitles(
+                  axisNameWidget: const Text("Blood Sugar Graph"),
+                  axisNameSize: 35,
+                  sideTitles: SideTitles(
+                    showTitles: false,
+                    getTitlesWidget: (value, meta) => Text("Blood sugar Graph"),
+                  )),
+              bottomTitles: AxisTitles(
+                  axisNameWidget: const Text("Number of records"),
+                  axisNameSize: 25,
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                  ))),
+          borderData: FlBorderData(show: true),
+          barGroups: records.asMap().entries.map((entry) {
+            return BarChartGroupData(
+              x: entry.key,
+              barRods: [
+                BarChartRodData(
+                  toY: entry.value['value'],
+                  color: Colors.blueAccent,
+                  width: 18,
+                  borderRadius: BorderRadius.circular(2),
+                  borderSide: BorderSide(
+                      strokeAlign: BorderSide.strokeAlignCenter,
+                      width: BorderSide.strokeAlignOutside,
+                      color: Colors.black),
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: false,
+                    toY: 10,
+                    color: Colors.grey[300],
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLatestRecordCard() {
+    if (records.isEmpty) {
+      return Text("No records available yet.");
+    }
+    return _buildRecordCard(records[0], 0);
+  }
+
+  Widget _buildPreviousRecordsList() {
+    return Expanded(
+      child: ListView.builder(
+        itemCount: records.length > 1 ? records.length - 1 : 0,
+        itemBuilder: (context, index) {
+          //final recordIndex = index + 1;
+          //final record = records[recordIndex];
+
+          return _buildRecordCard(records[index + 1], index + 1);
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+            );
+          },
+        ),
+        title: Text('Blood Sugar', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.blueGrey,
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _buildBarChart(),
+                SizedBox(height: 10),
+                _buildLatestRecordCard(),
+              ],
+            ),
+          ),
+
+          _buildPreviousRecordsList(),
+          SizedBox(height: 10),
+
+          // Add Record Button
+          Container(
+            padding: EdgeInsets.all(10.0),
+            child: ElevatedButton(
+              onPressed: _showAddRecordDialog,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                minimumSize: Size(double.infinity, 50),
+              ),
+              child:
+                  Text('+ Add Record', style: TextStyle(color: Colors.white)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
