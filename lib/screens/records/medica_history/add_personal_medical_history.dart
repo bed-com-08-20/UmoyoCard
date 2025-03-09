@@ -14,9 +14,42 @@ class _AddPersonalMedicalRecordScreenState
     extends State<AddPersonalMedicalRecordScreen> {
   String selectedCategory = 'Chronic Illness';
   final Map<String, List<String>> categoryFields = {
-    'Chronic Illness': ['Condition Name', 'Date Diagnosed', 'Status', 'Medications'],
-    'Allergies': ['Allergen Name', 'Reaction Type', 'Last Occurrence Date', 'Treatment Used'],
+    'Chronic Illness': [
+      'Condition Name',
+      'Date Diagnosed',
+      'Status',
+      'Medications'
+    ],
+    'Allergies': [
+      'Allergen Name',
+      'Reaction Type',
+      'Last Occurrence Date',
+      'Treatment Used'
+    ],
     'Surgery': ['Date Performed', 'Hospital Name', 'Complications (if any)'],
+    'Hospitalization': [
+      'Admission Date',
+      'Discharge Date',
+      'Reason for Hospitalization',
+      'Hospital Name',
+      'Treatments Received',
+      'Complications (if any)'
+    ],
+    'Immunization': [
+      'Vaccine Name',
+      'Date Administered',
+      'Location/Clinic Name',
+      'Next Due Date (if applicable)',
+      'Adverse Reactions (if any)'
+    ],
+    'Mental Health': [
+      'Diagnosis',
+      'Date Diagnosed',
+      'Symptoms',
+      'Treatments/Therapies',
+      'Medications',
+      'Hospitalizations (if any)'
+    ],
   };
 
   final Map<String, TextEditingController> controllers = {};
@@ -123,7 +156,8 @@ class _AddPersonalMedicalRecordScreenState
                   TextButton.icon(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close, color: Colors.black),
-                    label: const Text('Cancel', style: TextStyle(color: Colors.black)),
+                    label: const Text('Cancel',
+                        style: TextStyle(color: Colors.black)),
                     style: TextButton.styleFrom(
                       backgroundColor: Colors.grey[300],
                     ),
@@ -145,7 +179,8 @@ class _AddPersonalMedicalRecordScreenState
           controller: controllers[field],
           decoration: InputDecoration(
             labelText: field,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
           ),
         ),
       );
