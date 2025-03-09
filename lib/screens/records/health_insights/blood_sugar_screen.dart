@@ -99,13 +99,38 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     throw ArgumentError('Invalid blood sugar value: $value');
   }
 
+  void _confirmDeleteRecord(int index) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Confirm Deletion'),
+      content: Text('Are you sure you want to delete this record?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            _deleteRecord(index);
+            Navigator.pop(context);
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          child: Text('Yes, Delete', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
+}
+
+
   Widget _buildEllipsisMenu(int index) {
     return PopupMenuButton<String>(
       onSelected: (value) {
         if (value == 'edit') {
           _showEditRecordDialog(index);
         } else if (value == 'delete') {
-          _deleteRecord(index);
+          _confirmDeleteRecord(index);
         }
       },
       itemBuilder: (context) => [
@@ -165,7 +190,8 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                 );
               }
             },
-            child: Text('Save'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+            child: Text('Save', style: TextStyle(color: Colors.white),),
           ),
         ],
       ),
@@ -210,7 +236,8 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                         'Invalid value! Please enter a valid blood sugar level. ')));
               }
             },
-            child: Text('Add'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+            child: Text('Add', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
