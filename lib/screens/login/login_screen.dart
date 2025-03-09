@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:umoyocard/screens/login/create_account.dart';
 //import 'create_password_screen.dart';
 import '../home/home_screen.dart';
 
@@ -115,11 +116,10 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 32.0),
               TextButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text(
-                            'Create New Account Screen not yet implemented!')),
-                  );
+                   Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => CreateAccount()),
+                     );
                 },
                 child: const Text(
                   'Create New Account',
