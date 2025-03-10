@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:umoyocard/screens/login/create_password.dart';
 
 class CreateAccount extends StatelessWidget {
   const CreateAccount({super.key});
@@ -52,7 +53,12 @@ class CreateAccountForm extends StatelessWidget {
         FormTextField(label: "Gender"),
         const SizedBox(height: 20),
         ElevatedButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => CreatePassword()),
+      );
+          },
           style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50), backgroundColor: Colors.blueAccent),
           child: const Text("Next", style: TextStyle(color: Colors.white)),
         ),
