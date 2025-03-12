@@ -1,8 +1,27 @@
 import 'package:flutter/material.dart';
 
-class UpdatePersonalInfoScreen extends StatelessWidget {
+class UpdatePersonalInfoScreen extends StatefulWidget {
   // ignore: use_super_parameters
   const UpdatePersonalInfoScreen({Key? key}) : super(key: key);
+
+  @override
+  // ignore: library_private_types_in_public_api
+  _UpdatePersonalInfoScreenState createState() =>
+      _UpdatePersonalInfoScreenState();
+}
+
+class _UpdatePersonalInfoScreenState extends State<UpdatePersonalInfoScreen> {
+  // Initial personal information
+  Map<String, String> personalInfo = {
+    'Fullname': 'Harry Yamikani Peter',
+    'Date of Birth': '12/05/1998',
+    'Address': 'Box 320, Balaka',
+    'Phone Number': '+265995602273',
+    'Email Address': 'harrypeter@gmail.com',
+    'National ID': 'WZXE21Q',
+    'Nationality': 'Malawian',
+    'Gender': 'Male',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -46,16 +65,9 @@ class UpdatePersonalInfoScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8.0),
               ),
               child: Column(
-                children: [
-                  _buildInfoRow('Fullname', 'Harry Yamikani Peter', context),
-                  _buildInfoRow('Date of Birth', '12/05/1998', context),
-                  _buildInfoRow('Address', 'Box 320, Balaka', context),
-                  _buildInfoRow('Phone Number', '+265995602273', context),
-                  _buildInfoRow('Email Address', 'harrypeter@gmail.com', context),
-                  _buildInfoRow('National ID', 'WZXE21Q', context),
-                  _buildInfoRow('Nationality', 'Malawian', context),
-                  _buildInfoRow('Gender', 'Male', context),
-                ],
+                children: personalInfo.entries.map((entry) {
+                  return _buildInfoRow(entry.key, entry.value, context);
+                }).toList(),
               ),
             ),
           ],
@@ -65,7 +77,7 @@ class UpdatePersonalInfoScreen extends StatelessWidget {
   }
 
   Widget _buildInfoRow(String label, String value, BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -84,13 +96,53 @@ class UpdatePersonalInfoScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.black54),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Edit $label')),
-              );
+              _showEditDialog(context, label, value);
             },
           ),
         ],
       ),
+    );
+  }
+
+  // Show a dialog for editing
+  void _showEditDialog(BuildContext context, String label, String currentValue) {
+    TextEditingController controller = TextEditingController(text: currentValue);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit $label'),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: label,
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  // Update the personal info with the new value
+                  personalInfo[label] = controller.text;
+                });
+                Navigator.of(context).pop(); // Close the dialog
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('$label updated successfully')),
+                );
+              },
+              child: const Text('Save Changes'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
