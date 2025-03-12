@@ -5,6 +5,7 @@ import 'package:umoyocard/screens/records/record_screen.dart';
 import 'package:umoyocard/screens/home/ocr_screen.dart';
 import 'package:umoyocard/screens/records/timeline_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:umoyocard/screens/records/blood_pressure_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -73,13 +74,8 @@ class HomeContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Hi Wadi Mkweza, welcome back!',
+              'Welcome back Harry',
               style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16.0),
-            Text(
-              'Quick Links',
-              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.0),
             // Instead of a GridView.builder, we now structure the cards like RecordScreen.
@@ -189,10 +185,10 @@ class HomeContent extends StatelessWidget {
         MaterialPageRoute(builder: (context) => TimelineScreen()),
       );
     } 
-    else if (label == 'Recent Timeline') {
+    else if (label == 'Blood Pressure') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => BloodPresureScreen()),
+        MaterialPageRoute(builder: (context) => BloodPressureScreen()),
       );
     }
     
@@ -206,11 +202,13 @@ class HomeContent extends StatelessWidget {
 
 /// (Optional) A separate quick link card widget, if needed elsewhere.
 /// Here it remains unchanged from your original code.
+// ignore: unused_element
 class _QuickLinkCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
 
+  // ignore: unused_element_parameter, prefer_const_constructors_in_immutables
   _QuickLinkCard({required this.icon, required this.label, this.onTap});
 
   @override
@@ -249,9 +247,11 @@ const quickLinks = [
 /// refreshes its content periodically as before.
 class RecentTimelineCard extends StatefulWidget {
   final VoidCallback? onTap;
+  // ignore: use_super_parameters
   const RecentTimelineCard({Key? key, this.onTap}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _RecentTimelineCardState createState() => _RecentTimelineCardState();
 }
 

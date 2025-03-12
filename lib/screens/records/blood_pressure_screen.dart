@@ -162,10 +162,32 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
     );
   }
 
-  void deleteRecord(int index) {
-    setState(() {
-      records.removeAt(index);
-    });
+    void _confirmDelete(int index) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Confirm Deletion"),
+          content: Text("Are you sure you want to delete this record?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  records.removeAt(index);
+                  _saveRecords();
+                });
+                Navigator.pop(context);
+              },
+              child: Text("Delete"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -238,17 +260,30 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                           title: Text("${record.systolic}/${record.diastolic} mmHg"),
                           subtitle: Text("${record.category}\n${record.date.day}-${record.date.month}-${record.date.year}"),
                           trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () => addOrEditRecord(index: index),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => deleteRecord(index),
-                              ),
-                            ],
+                                  mainAxisSize: MainAxisSize.min,
+                                   children: [
+                                     Container(
+                                      decoration: BoxDecoration(
+                                      color: Colors.blue.shade100,
+                                      shape: BoxShape.circle,
+                                        ),
+                                    child: IconButton(
+                                    icon: Icon(Icons.edit, color: Colors.blue),
+                                    onPressed: () => addOrEditRecord(index: index),
+                                      ),
+                                    ),
+                                  SizedBox(width: 8),
+                                  Container(
+                                  decoration: BoxDecoration(
+                                  color: Colors.red.shade100,
+                                  shape: BoxShape.circle,
+                                    ),
+                                   child: IconButton(
+                                    icon: Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => _confirmDelete(index),
+                                    ),
+                                ),
+                           ],
                           ),
                         ),
                       );
