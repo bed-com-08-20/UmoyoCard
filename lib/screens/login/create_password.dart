@@ -6,12 +6,14 @@ class PasswordTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final bool obscureText;
+  final String? errorText;
 
   const PasswordTextField({
     super.key,
     required this.controller,
     required this.hintText,
     this.obscureText = false,
+    this.errorText,
   });
 
   @override
@@ -21,7 +23,13 @@ class PasswordTextField extends StatelessWidget {
       obscureText: obscureText,
       decoration: InputDecoration(
         hintText: hintText,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+            color: errorText == null ? Colors.grey : Colors.red,
+          ),        
+       ),
+        errorText: errorText,
       ),
     );
   }
@@ -56,7 +64,6 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
-
 class CreatePassword extends StatelessWidget {
   const CreatePassword({super.key});
 
@@ -78,23 +85,26 @@ class CreatePassword extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Create a password to secure your account. It should be something others can't guess."),
+            const Text(
+                "Create a password to secure your account. It should be something others can't guess."),
             const SizedBox(height: 20),
             PasswordTextField(
-              controller: provider.newPasswordController,
+              controller: provider.passwordController,
               hintText: "Password",
               obscureText: true,
+              errorText: provider.passwordError,
             ),
             const SizedBox(height: 16),
             PasswordTextField(
               controller: provider.confirmPasswordController,
               hintText: "Confirm Password",
               obscureText: true,
+              errorText: provider.confirmPasswordError,
             ),
             const SizedBox(height: 32),
             PrimaryButton(
               text: "Save Password",
-              onPressed: provider.validatePasswords,
+              onPressed: provider.savePasswordToFirebase,
             ),
           ],
         ),
