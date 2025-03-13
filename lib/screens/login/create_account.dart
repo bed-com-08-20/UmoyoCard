@@ -53,8 +53,49 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
   final TextEditingController _nationalityController = TextEditingController();
   final TextEditingController _genderController = TextEditingController();
 
+  final Map<String, String?> _errorMessages = {};
+
   Future<void> _saveToFirebase() async {
-    if (_formKey.currentState!.validate()) {
+    bool isValid = true;
+
+    setState(() {
+      _errorMessages.clear();
+      if (_fullnameController.text.isEmpty) {
+        _errorMessages['fullname'] = "This field is required";
+        isValid = false;
+      }
+      if (_dobController.text.isEmpty) {
+        _errorMessages['dob'] = "This field is required";
+        isValid = false;
+      }
+      if (_addressController.text.isEmpty) {
+        _errorMessages['address'] = "This field is required";
+        isValid = false;
+      }
+      if (_phoneController.text.isEmpty) {
+        _errorMessages['phone'] = "This field is required";
+        isValid = false;
+      }
+      if (_emailController.text.isEmpty) {
+        _errorMessages['email'] = "This field is required";
+        isValid = false;
+      }
+      if (_nationalIdController.text.isEmpty) {
+        _errorMessages['national_id'] = "This field is required";
+        isValid = false;
+      }
+      if (_nationalityController.text.isEmpty) {
+        _errorMessages['nationality'] = "This field is required";
+        isValid = false;
+      }
+      if (_genderController.text.isEmpty) {
+        _errorMessages['gender'] = "This field is required";
+        isValid = false;
+      }
+    });
+
+
+    if (isValid) {
       try {
         await FirebaseFirestore.instance.collection('users').add({
           'fullname': _fullnameController.text,
@@ -90,14 +131,62 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
       key: _formKey,
       child: Column(
         children: [
-          FormTextField(label: "Fullname", controller: _fullnameController),
-          FormTextField(label: "Date of Birth", controller: _dobController),
-          FormTextField(label: "Address", controller: _addressController),
-          FormTextField(label: "Phone Number", controller: _phoneController),
-          FormTextField(label: "Email Address", controller: _emailController),
-          FormTextField(label: "National ID", controller: _nationalIdController),
-          FormTextField(label: "Nationality", controller: _nationalityController),
-          FormTextField(label: "Gender", controller: _genderController),
+          FormTextField(
+            label: "Fullname",
+            controller: _fullnameController,
+            errorText: _errorMessages['fullname'],
+            onChanged: (value) =>
+                setState(() => _errorMessages['fullname'] = null),
+          ),
+          FormTextField(
+            label: "Date of Birth",
+            controller: _dobController,
+            errorText: _errorMessages['dob'],
+            onChanged: (value) =>
+                setState(() => _errorMessages['dob'] = null),
+          ),
+          FormTextField(
+            label: "Address",
+            controller: _addressController,
+            errorText: _errorMessages['address'],
+            onChanged: (value) =>
+                setState(() => _errorMessages['address'] = null),
+          ),
+          FormTextField(
+            label: "Phone Number",
+            controller: _phoneController,
+            errorText: _errorMessages['phone'],
+            onChanged: (value) =>
+                setState(() => _errorMessages['phone'] = null),
+          ),
+          FormTextField(
+            label: "Email Address",
+            controller: _emailController,
+            errorText: _errorMessages['email'],
+            onChanged: (value) =>
+                setState(() => _errorMessages['email'] = null),
+          ),
+          FormTextField(
+            label: "National ID",
+            controller: _nationalIdController,
+            errorText: _errorMessages['national_id'],
+            onChanged: (value) =>
+                setState(() => _errorMessages['national_id'] = null),
+          ),
+          FormTextField(
+            label: "Nationality",
+            controller: _nationalityController,
+            errorText: _errorMessages['nationality'],
+            onChanged: (value) =>
+                setState(() => _errorMessages['nationality'] = null),
+          ),
+          FormTextField(
+            label: "Gender",
+            controller: _genderController,
+            errorText: _errorMessages['gender'],
+            onChanged: (value) =>
+                setState(() => _errorMessages['gender'] = null),
+          ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: _saveToFirebase,
@@ -116,8 +205,16 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
 class FormTextField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
+  final String? errorText;
+  final ValueChanged<String> onChanged;
 
-  const FormTextField({super.key, required this.label, required this.controller});
+  const FormTextField({
+    super.key,
+    required this.label,
+    required this.controller,
+    this.errorText,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -125,11 +222,12 @@ class FormTextField extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
+        onChanged: onChanged,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(),
+          errorText: errorText,
         ),
-        validator: (value) => value == null || value.isEmpty ? "This field is required " : null,
       ),
     );
   }
