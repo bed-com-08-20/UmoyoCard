@@ -186,7 +186,7 @@ class HomeContent extends StatelessWidget {
         context,
         MaterialPageRoute(builder: (context) => TimelineScreen()),
       );
-    } else if (label == 'Blood Sugar') {
+    } else if (label == 'Blood Pressure') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => BloodPressureScreen()),
