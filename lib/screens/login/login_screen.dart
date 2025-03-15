@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/login/create_account.dart';
+<<<<<<< HEAD
 
+=======
+//import 'create_password_screen.dart';
+import '../home/home_screen.dart';
+>>>>>>> wadi
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -113,10 +118,10 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 32.0),
               TextButton(
                 onPressed: () {
-                   Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CreateAccount()),
-                     );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CreateAccount()),
+                  );
                 },
                 child: const Text(
                   'Create New Account',

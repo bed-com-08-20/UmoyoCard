@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/profile/profile_screen.dart';
+import 'package:umoyocard/screens/records/health_insights/blood_pressure_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
 import 'package:umoyocard/screens/records/record_screen.dart';
 import 'package:umoyocard/screens/home/ocr_screen.dart';
 import 'package:umoyocard/screens/records/timeline_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:umoyocard/screens/records/blood_pressure_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -72,8 +72,13 @@ class HomeContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Welcome back Harry',
+              'Hi Wadi Mkweza, welcome back!',
               style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16.0),
+            Text(
+              'Quick Links',
+              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.0),
             Expanded(
@@ -181,15 +186,12 @@ class HomeContent extends StatelessWidget {
         context,
         MaterialPageRoute(builder: (context) => TimelineScreen()),
       );
-    } 
-    else if (label == 'Blood Pressure') {
+    } else if (label == 'Blood Sugar') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => BloodPressureScreen()),
       );
-    }
-    
-   else if (label == 'Blood Sugar') {
+    } else if (label == 'Blood Sugar') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => BloodSugarScreen()),
@@ -202,15 +204,11 @@ class HomeContent extends StatelessWidget {
   }
 }
 
-/// (Optional) A separate quick link card widget, if needed elsewhere.
-/// Here it remains unchanged from your original code.
-// ignore: unused_element
 class _QuickLinkCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
 
-  // ignore: unused_element_parameter, prefer_const_constructors_in_immutables
   _QuickLinkCard({required this.icon, required this.label, this.onTap});
 
   @override
@@ -246,11 +244,9 @@ const quickLinks = [
 
 class RecentTimelineCard extends StatefulWidget {
   final VoidCallback? onTap;
-  // ignore: use_super_parameters
   const RecentTimelineCard({Key? key, this.onTap}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _RecentTimelineCardState createState() => _RecentTimelineCardState();
 }
 

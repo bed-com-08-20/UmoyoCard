@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:umoyocard/screens/records/health_insights/blood_pressure_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
 
 class HealthInsightsScreen extends StatelessWidget {
@@ -38,7 +39,7 @@ class HealthInsightsScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         _buildRecordCard(context, 'Blood Pressure',
-                            Icons.favorite, const BloodSugarScreen()),
+                            Icons.favorite, BloodPressureScreen()),
                       ],
                     ),
                   ),
@@ -49,7 +50,7 @@ class HealthInsightsScreen extends StatelessWidget {
                           context,
                           'Blood Sugar',
                           Icons.medical_services,
-                          Container(),
+                          const BloodSugarScreen(),
                         ),
                       ],
                     ),
