@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-//import 'create_password_screen.dart';
-import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,10 +23,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (password.isNotEmpty) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-      );
+      // Navigate to LoadingScreen first
+      Navigator.pushReplacementNamed(context, '/loading');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter your password!')),
