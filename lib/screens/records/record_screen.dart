@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:umoyocard/screens/records/health_insights.dart';
+import 'package:umoyocard/screens/records/health_insights/health_insights.dart';
 import 'package:umoyocard/screens/records/medica_history/medical_history.dart';
 import 'package:umoyocard/screens/records/shared_data_record.dart';
 import 'timeline_screen.dart';

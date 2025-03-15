@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/profile/profile_screen.dart';
+import 'package:umoyocard/screens/records/health_insights/blood_pressure_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
 import 'package:umoyocard/screens/records/record_screen.dart';
 import 'package:umoyocard/screens/home/ocr_screen.dart';
@@ -184,6 +185,11 @@ class HomeContent extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => TimelineScreen()),
+      );
+    } else if (label == 'Blood Pressure') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => BloodPressureScreen()),
       );
     } else if (label == 'Blood Sugar') {
       Navigator.push(
