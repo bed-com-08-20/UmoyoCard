@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/profile/profile_screen.dart';
+import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
 import 'package:umoyocard/screens/records/record_screen.dart';
 import 'package:umoyocard/screens/home/ocr_screen.dart';
 import 'package:umoyocard/screens/records/timeline_screen.dart';
@@ -15,7 +16,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // The widget options remain unchanged.
   final List<Widget> _widgetOptions = <Widget>[
     HomeContent(),
     RecordScreen(),
@@ -65,8 +65,6 @@ class _HomeScreenState extends State<HomeScreen> {
 class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // The quick links have been reduced to four:
-    // "Scan Health Passport", "Recent Timeline", "Blood Pressure", and "Blood Sugar".
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.all(16.0),
@@ -78,7 +76,6 @@ class HomeContent extends StatelessWidget {
               style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.0),
-            // Instead of a GridView.builder, we now structure the cards like RecordScreen.
             Expanded(
               child: Column(
                 children: [
@@ -192,7 +189,12 @@ class HomeContent extends StatelessWidget {
       );
     }
     
-    else {
+   else if (label == 'Blood Sugar') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => BloodSugarScreen()),
+      );
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Feature for "$label" is not implemented yet.')),
       );
@@ -235,7 +237,6 @@ class _QuickLinkCard extends StatelessWidget {
   }
 }
 
-// The quickLinks constant has been updated to remove Heart Rate and Weight.
 const quickLinks = [
   {'icon': Icons.qr_code_scanner, 'label': 'Scan Health Passport'},
   {'icon': Icons.timeline, 'label': 'Recent Timeline'},
@@ -243,8 +244,6 @@ const quickLinks = [
   {'icon': Icons.medical_services, 'label': 'Blood Sugar'},
 ];
 
-/// The RecentTimelineCard remains unchanged so that it
-/// refreshes its content periodically as before.
 class RecentTimelineCard extends StatefulWidget {
   final VoidCallback? onTap;
   // ignore: use_super_parameters

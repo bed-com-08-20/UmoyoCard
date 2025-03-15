@@ -4,8 +4,7 @@ import 'package:umoyocard/screens/profile/change_password.dart';
 import 'package:umoyocard/screens/profile/personal_information.dart';
 
 class ProfileScreen extends StatelessWidget {
-  // ignore: use_super_parameters
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

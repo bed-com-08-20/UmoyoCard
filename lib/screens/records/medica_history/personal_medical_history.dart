@@ -1,17 +1,83 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:umoyocard/screens/records/medica_history/add_personal_medical_history.dart';
+import 'dart:convert';
 
-class PersonalMedicalHistoryScreen extends StatelessWidget {
+class PersonalMedicalHistoryScreen extends StatefulWidget {
   const PersonalMedicalHistoryScreen({Key? key}) : super(key: key);
+
+  @override
+  _PersonalMedicalHistoryScreenState createState() =>
+      _PersonalMedicalHistoryScreenState();
+}
+
+class _PersonalMedicalHistoryScreenState
+    extends State<PersonalMedicalHistoryScreen> {
+  List<Map<String, dynamic>> _medicalRecords = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMedicalRecords();
+  }
+
+  // Load medical records from SharedPreferences
+  Future<void> _loadMedicalRecords() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String key = 'medical_records';
+    final List<String> storedRecords = prefs.getStringList(key) ?? [];
+
+    setState(() {
+      _medicalRecords = storedRecords.map((record) {
+        final Map<String, dynamic> recordMap = jsonDecode(record);
+        return {
+          'title': recordMap['title'],
+          'details': recordMap['details'],
+        };
+      }).toList();
+    });
+  }
+
+  // Save updated records to SharedPreferences
+  Future<void> _updatePreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String key = 'medical_records';
+    final List<String> storedRecords = _medicalRecords.map((record) {
+      return jsonEncode(record);
+    }).toList();
+    await prefs.setStringList(key, storedRecords);
+  }
+
+  // Add a new medical record
+  void _addMedicalRecord(Map<String, dynamic> newRecord) async {
+    setState(() {
+      _medicalRecords.add(newRecord);
+    });
+    await _updatePreferences(); // Save the updated list to SharedPreferences
+  }
+
+  // Edit a medical record
+  void _editMedicalRecord(int index, Map<String, dynamic> updatedRecord) async {
+    setState(() {
+      _medicalRecords[index] = updatedRecord;
+    });
+    await _updatePreferences(); // Save the updated list to SharedPreferences
+  }
+
+  // Delete a medical record
+  void _deleteMedicalRecord(int index) async {
+    setState(() {
+      _medicalRecords.removeAt(index);
+    });
+    await _updatePreferences(); // Save the updated list to SharedPreferences
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Personal Medical History',
-          style: TextStyle(color: Colors.blue),
-        ),
+        title: const Text('Personal Medical History',
+            style: TextStyle(color: Colors.blue)),
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -19,55 +85,56 @@ class PersonalMedicalHistoryScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            MedicalCard(
-              title: 'Chronic illness',
-              details: {
-                'Name of condition': 'Diabetes, Hypertension',
-                'Date Diagnosed': 'Diagnosed 2020',
-                'Status': 'Ongoing',
-                'Medications': 'Metformin, Insulin',
-              },
+            Expanded(
+              child: _medicalRecords.isEmpty
+                  ? const Center(
+                      child: Text(
+                      'No records found.\nTap "Add Record" to create one.',
+                      style: TextStyle(
+                        fontSize: 15,
+                      ),
+                    ))
+                  : ListView.builder(
+                      itemCount: _medicalRecords.length,
+                      itemBuilder: (context, index) {
+                        final record = _medicalRecords[index];
+                        return MedicalCard(
+                          title: record['title'],
+                          details: Map<String, String>.from(record['details']),
+                          onEdit: () => _editMedicalRecord(index, record),
+                          onDelete: () => _deleteMedicalRecord(index),
+                        );
+                      },
+                    ),
             ),
-            MedicalCard(
-              title: 'Allergies',
-              details: {
-                'Allergen Name': 'Peanuts, Penicillin',
-                'Reaction Type': 'Mild',
-                'Last occurrence Date': '23/04/2025',
-                'Treatment used': 'None',
-              },
-            ),
-            MedicalCard(
-              title: 'Surgery',
-              details: {
-                'Date Performed': '12/09/2023',
-                'Hospital Name': 'Zomba central',
-                'Complicated (if any)': 'None',
-              },
-            ),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Record'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
+            ElevatedButton.icon(
+              onPressed: () async {
+                final newRecord = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const AddPersonalMedicalRecordScreen(),
                   ),
+                );
+                if (newRecord != null) {
+                  _addMedicalRecord(newRecord);
+                }
+              },
+              icon: const Icon(
+                Icons.add,
+                size: 30,
+              ),
+              label: const Text(
+                'Add Record',
+                style: TextStyle(
+                  fontSize: 20,
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(LucideIcons.history),
-                  label: const Text('View History'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                minimumSize: Size(double.infinity, 50),
+              ),
             ),
           ],
         ),
@@ -79,12 +146,16 @@ class PersonalMedicalHistoryScreen extends StatelessWidget {
 class MedicalCard extends StatelessWidget {
   final String title;
   final Map<String, String> details;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   // ignore: use_super_parameters
   const MedicalCard({
     Key? key,
     required this.title,
     required this.details,
+    required this.onEdit,
+    required this.onDelete,
   }) : super(key: key);
 
   @override
@@ -98,12 +169,31 @@ class MedicalCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      onEdit();
+                    } else if (value == 'delete') {
+                      onDelete();
+                    }
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return {'edit', 'delete'}.map((String choice) {
+                      return PopupMenuItem<String>(
+                        value: choice,
+                        child: Text(choice),
+                      );
+                    }).toList();
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             ...details.entries.map(
@@ -112,15 +202,11 @@ class MedicalCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${entry.key}: ',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    Text('${entry.key}: ',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
                     Expanded(
-                      child: Text(
-                        entry.value,
-                        style: TextStyle(color: Colors.grey[700]),
-                      ),
+                      child: Text(entry.value,
+                          style: TextStyle(color: Colors.grey[700])),
                     ),
                   ],
                 ),

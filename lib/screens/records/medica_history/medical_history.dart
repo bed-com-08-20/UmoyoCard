@@ -12,7 +12,7 @@ class MedicalHistoryScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'Personal Medical History',
+          'Medical History',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -40,7 +40,7 @@ class MedicalHistoryScreen extends StatelessWidget {
                         _buildRecordCard(
                             context,
                             'Personal medical History',
-                            Icons.insights,
+                            Icons.health_and_safety,
                             const PersonalMedicalHistoryScreen()),
                       ],
                     ),
@@ -51,7 +51,7 @@ class MedicalHistoryScreen extends StatelessWidget {
                         _buildRecordCard(
                           context,
                           'Family Medical History',
-                          Icons.history,
+                          Icons.people,
                           Container(),
                         ),
                       ],
@@ -83,14 +83,14 @@ class MedicalHistoryScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.blue, size: 30),
+              Icon(icon, color: Colors.blue, size: 60),
               const SizedBox(height: 10),
               Text(
                 title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.black,
-                  fontSize: 14,
+                  fontSize: 16,
                 ),
               ),
             ],

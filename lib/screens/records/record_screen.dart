@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:umoyocard/screens/records/health_insights.dart';
 import 'package:umoyocard/screens/records/medica_history/medical_history.dart';
+import 'package:umoyocard/screens/records/shared_data_record.dart';
 import 'timeline_screen.dart';
 
 class RecordScreen extends StatelessWidget {
-  const RecordScreen({Key? key}) : super(key: key);
+  const RecordScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +51,7 @@ class RecordScreen extends StatelessWidget {
                           context,
                           'Health Insights',
                           Icons.insights,
-                          Container(),
+                          const HealthInsightsScreen(),
                         ),
                       ],
                     ),
@@ -67,7 +69,7 @@ class RecordScreen extends StatelessWidget {
                           context,
                           'Shared Data',
                           Icons.share,
-                          Container(),
+                          SharedDataRecordScreen(),
                         ),
                       ],
                     ),

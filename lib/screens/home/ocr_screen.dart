@@ -173,8 +173,17 @@ Treatment: ${treatmentController.text}
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("OCR Scan"),
         centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'OCR Scan',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.blueAccent,
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -222,11 +231,11 @@ Treatment: ${treatmentController.text}
               const SizedBox(height: 24.0),
               ElevatedButton(
                 onPressed: _saveRecord,
-                child: const Text("Save Record"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                 ),
+                child: const Text("Save Record"),
               ),
             ],
           ),
