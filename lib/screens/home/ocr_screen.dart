@@ -231,11 +231,11 @@ Treatment: ${treatmentController.text}
               const SizedBox(height: 24.0),
               ElevatedButton(
                 onPressed: _saveRecord,
-                child: const Text("Save Record"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                 ),
+                child: const Text("Save Record"),
               ),
             ],
           ),

@@ -1,0 +1,2 @@
+C:/Users/OSP/Documents/ICT_Project/UmoyoCard/android/app/.cxx/Debug/5j3tk9p4/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/OSP/Documents/ICT_Project/UmoyoCard/android/app/.cxx/Debug/5j3tk9p4/armeabi-v7a/CMakeFiles/rebuild_cache.dir

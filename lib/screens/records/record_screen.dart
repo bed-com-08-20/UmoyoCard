@@ -5,7 +5,7 @@ import 'package:umoyocard/screens/records/shared_data_record.dart';
 import 'timeline_screen.dart';
 
 class RecordScreen extends StatelessWidget {
-  const RecordScreen({Key? key}) : super(key: key);
+  const RecordScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
