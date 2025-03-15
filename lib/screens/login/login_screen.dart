@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
-=======
 import 'package:umoyocard/screens/login/create_account.dart';
-//import 'create_password_screen.dart';
-import '../home/home_screen.dart';
->>>>>>> dd4239b90fb001251cc951a6764079f43bb4f97a
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

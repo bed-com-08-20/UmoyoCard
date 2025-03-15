@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/login/login_screen.dart';
+import 'package:umoyocard/screens/profile/change_password.dart';
+import 'package:umoyocard/screens/profile/personal_information.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -33,7 +35,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8.0),
             const Text(
-              'Wadi Mkweza',
+              'Harry Yamikani Peter',
               style: TextStyle(
                 fontSize: 18.0,
                 fontWeight: FontWeight.bold,
@@ -43,8 +45,22 @@ class ProfileScreen extends StatelessWidget {
 
             // Account & Settings Section
             _buildSectionTitle('Settings'),
-            _buildListTile('Update Personal Information', Icons.person, () {}),
-            _buildListTile('Change Password', Icons.lock, () {}),
+            _buildListTile('Update Personal Information', Icons.person, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const UpdatePersonalInfoScreen(),
+                ),
+              );
+            }),
+            _buildListTile('Change Password', Icons.lock, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ChangePasswordScreen(),
+                ),
+              );
+            }),
 
             // Language Section
             _buildListTile('Language', Icons.language, () {}),
@@ -82,8 +98,8 @@ class ProfileScreen extends StatelessWidget {
                   );
                 },
                 child: const Text(
-                  'Logout',
-                  style: TextStyle(fontSize: 20, color: Colors.red),
+                  'Log out',
+                  style: TextStyle(fontSize: 20, color: Colors.black),
                 ),
               ),
             ),

@@ -149,6 +149,7 @@ class MedicalCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
+  // ignore: use_super_parameters
   const MedicalCard({
     Key? key,
     required this.title,
