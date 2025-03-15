@@ -36,36 +36,69 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     }
   }
 
+  String _determineStatus(double value) {
+    if (value >= 1 && value < 2.8) {
+      return 'Below';
+    } else if (value >= 2.8 && value < 3.9) {
+      return 'Low';
+    } else if (value >= 3.9 && value < 5.7) {
+      return 'Normal';
+    } else if (value >= 5.7 && value < 6.9) {
+      return 'Prediabetes';
+    } else if (value >= 6.9 && value <= 90) {
+      return 'Diabetes';
+    }
+    throw ArgumentError('Invalid blood sugar value: $value');
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Below':
+        return Colors.blue;
+      case 'Low':
+        return Colors.yellow;
+      case 'Normal':
+        return Colors.green;
+      case 'Prediabetes':
+        return Colors.orange;
+      case 'Diabetes':
+        return Colors.redAccent;
+      default:
+        return Colors.grey;
+    }
+  }
+
   Widget _buildRecordCard(Map<String, dynamic> record, int index) {
     return Card(
       surfaceTintColor: const Color.fromARGB(255, 245, 246, 248),
       borderOnForeground: true,
       semanticContainer: true,
-      color: Colors.blue[100],
+      color: _getStatusColor(record['status']).withAlpha((0.3 * 255).toInt()), 
       margin: EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
+       child: Padding(
         padding: EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            CircleAvatar(
+              backgroundColor: _getStatusColor(record['status']),
+              radius: 15, 
+            ),
+            SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   '${record['value']} mmol/L',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                Row(
-                  children: [
-                    Text(record['status']),
-                    SizedBox(width: 10),
-                    _buildEllipsisMenu(index),
-                  ],
-                ),
+                SizedBox(height: 5),
+                Text(record['status']),
+                SizedBox(height: 5),
+                Text(record['date']),
               ],
             ),
-            SizedBox(height: 15),
-            Text(record['date']),
+            Spacer(), 
+            _buildEllipsisMenu(index),
           ],
         ),
       ),
@@ -83,46 +116,29 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     );
   }
 
-  String _determineStatus(double value) {
-    if (value >= 1 && value < 2.8) {
-      return 'Below';
-    } else if (value >= 2.8 && value < 3.9) {
-      return 'Low';
-    } else if (value >= 3.9 && value < 5.7) {
-      return 'Normal';
-    } else if (value >= 5.7 && value < 6.9) {
-      return 'Prediabetes';
-    } else if (value >= 6.9 && value <= 90) {
-      return 'Diabetes';
-    }
-
-    throw ArgumentError('Invalid blood sugar value: $value');
-  }
-
   void _confirmDeleteRecord(int index) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text('Confirm Deletion'),
-      content: Text('Are you sure you want to delete this record?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            _deleteRecord(index);
-            Navigator.pop(context);
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          child: Text('Yes, Delete', style: TextStyle(color: Colors.white)),
-        ),
-      ],
-    ),
-  );
-}
-
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Deletion'),
+        content: Text('Are you sure you want to delete this record?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _deleteRecord(index);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('Yes, Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildEllipsisMenu(int index) {
     return PopupMenuButton<String>(
@@ -191,7 +207,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-            child: Text('Save', style: TextStyle(color: Colors.white),),
+            child: Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -256,7 +272,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         BarChartData(
           barTouchData:
               BarTouchData(enabled: true, allowTouchBarBackDraw: true),
-          baselineY: 30,
+          baselineY: 0,
           alignment: BarChartAlignment.spaceAround,
           titlesData: FlTitlesData(
               show: true,
@@ -291,6 +307,9 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 30,
+                    getTitlesWidget: (value, meta) {
+                     return Text((value + 1).toInt().toString());
+                    }
                   ))),
           borderData: FlBorderData(show: true),
           barGroups: records.asMap().entries.map((entry) {
@@ -299,9 +318,9 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
               barRods: [
                 BarChartRodData(
                   toY: entry.value['value'],
-                  color: Colors.blueAccent,
+                  color: _getStatusColor(entry.value['status']),
                   width: 18,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(5),
                   borderSide: BorderSide(
                       strokeAlign: BorderSide.strokeAlignCenter,
                       width: BorderSide.strokeAlignOutside,
@@ -334,9 +353,6 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         child: ListView.builder(
           itemCount: records.length > 1 ? records.length - 1 : 0,
           itemBuilder: (context, index) {
-            //final recordIndex = index + 1;
-            //final record = records[recordIndex];
-
             return _buildRecordCard(records[index + 1], index + 1);
           },
         ),
@@ -349,7 +365,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
             Navigator.push(
               context,
@@ -357,8 +373,9 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
             );
           },
         ),
-        title: Text('Blood Sugar', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blueGrey,
+        title: Text('Blood Sugar', style: TextStyle(color: Colors.blue)),
+        backgroundColor: Colors.white,
+        centerTitle: true,
         elevation: 0,
       ),
       body: Column(
@@ -382,7 +399,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
 
           // Add Record Button
           Container(
-            padding: EdgeInsets.all(10.0),
+            padding: EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: _showAddRecordDialog,
               style: ElevatedButton.styleFrom(
