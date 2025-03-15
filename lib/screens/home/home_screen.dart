@@ -14,7 +14,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // The widget options remain unchanged.
   final List<Widget> _widgetOptions = <Widget>[
     HomeContent(),
     RecordScreen(),
@@ -64,8 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
 class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // The quick links have been reduced to four:
-    // "Scan Health Passport", "Recent Timeline", "Blood Pressure", and "Blood Sugar".
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.all(16.0),
@@ -82,7 +79,6 @@ class HomeContent extends StatelessWidget {
               style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.0),
-            // Instead of a GridView.builder, we now structure the cards like RecordScreen.
             Expanded(
               child: Column(
                 children: [
@@ -196,8 +192,6 @@ class HomeContent extends StatelessWidget {
   }
 }
 
-/// (Optional) A separate quick link card widget, if needed elsewhere.
-/// Here it remains unchanged from your original code.
 class _QuickLinkCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -229,7 +223,6 @@ class _QuickLinkCard extends StatelessWidget {
   }
 }
 
-// The quickLinks constant has been updated to remove Heart Rate and Weight.
 const quickLinks = [
   {'icon': Icons.qr_code_scanner, 'label': 'Scan Health Passport'},
   {'icon': Icons.timeline, 'label': 'Recent Timeline'},
@@ -237,8 +230,6 @@ const quickLinks = [
   {'icon': Icons.medical_services, 'label': 'Blood Sugar'},
 ];
 
-/// The RecentTimelineCard remains unchanged so that it
-/// refreshes its content periodically as before.
 class RecentTimelineCard extends StatefulWidget {
   final VoidCallback? onTap;
   const RecentTimelineCard({Key? key, this.onTap}) : super(key: key);
