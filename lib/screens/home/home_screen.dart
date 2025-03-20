@@ -209,7 +209,7 @@ class _QuickLinkCard extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  _QuickLinkCard({required this.icon, required this.label, this.onTap});
+  _QuickLinkCard({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {

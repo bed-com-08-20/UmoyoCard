@@ -3,6 +3,7 @@ import 'package:umoyocard/screens/login/login_screen.dart';
 import 'package:umoyocard/screens/profile/change_password.dart';
 import 'package:umoyocard/screens/profile/personal_information.dart';
 
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -11,6 +12,7 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
+
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
