@@ -15,6 +15,9 @@ migrate_working_dir/
 # VS Code related
 .vscode/
 
+#firbase
+lib/firebase/firebase_options.dart
+
 # IntelliJ related
 *.iml
 *.ipr
