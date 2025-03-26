@@ -87,6 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ElevatedButton(
                 onPressed: handleLogin,
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0),
                   ),
@@ -94,7 +95,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: const Text(
                   'Login',
-                  style: TextStyle(fontSize: 16.0),
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 16.0),
@@ -112,17 +117,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 32.0),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => CreateAccount()),
-                  );
-                },
-                child: const Text(
-                  'Create New Account',
-                  style: TextStyle(fontSize: 16.0, color: Colors.blue),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Don't have an account?",
+                    style: TextStyle(fontSize: 16.0),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => CreateAccount()),
+                      );
+                    },
+                    child: const Text(
+                      'Create Account',
+                      style: TextStyle(fontSize: 16.0, color: Colors.blue),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
