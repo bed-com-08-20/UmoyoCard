@@ -32,6 +32,10 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     if (savedData != null) {
       setState(() {
         records = List<Map<String, dynamic>>.from(jsonDecode(savedData));
+        for (var record in records) {
+          record['timestamp'] ??= DateTime.now().millisecondsSinceEpoch;
+        }
+        _saveRecords();
       });
     }
   }
@@ -73,15 +77,15 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
       surfaceTintColor: const Color.fromARGB(255, 245, 246, 248),
       borderOnForeground: true,
       semanticContainer: true,
-      color: _getStatusColor(record['status']).withAlpha((0.3 * 255).toInt()), 
+      color: _getStatusColor(record['status']).withAlpha((0.3 * 255).toInt()),
       margin: EdgeInsets.symmetric(vertical: 8),
-       child: Padding(
+      child: Padding(
         padding: EdgeInsets.all(12),
         child: Row(
           children: [
             CircleAvatar(
               backgroundColor: _getStatusColor(record['status']),
-              radius: 15, 
+              radius: 15,
             ),
             SizedBox(width: 12),
             Column(
@@ -97,7 +101,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                 Text(record['date']),
               ],
             ),
-            Spacer(), 
+            Spacer(),
             _buildEllipsisMenu(index),
           ],
         ),
@@ -140,20 +144,48 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     );
   }
 
+  bool _isEditingAllowed(int index) {
+    if (index >= records.length) return false;
+    final record = records[index];
+    final creationTime =
+        DateTime.fromMillisecondsSinceEpoch(record['timestamp'] ?? 0);
+    final currentTime = DateTime.now();
+    return currentTime.difference(creationTime).inMinutes <= 3;
+  }
+
   Widget _buildEllipsisMenu(int index) {
+    final canEdit = _isEditingAllowed(index);
+
     return PopupMenuButton<String>(
       onSelected: (value) {
-        if (value == 'edit') {
+        if (value == 'edit' && canEdit) {
           _showEditRecordDialog(index);
-        } else if (value == 'delete') {
+        } else if (value == 'delete' && canEdit) {
           _confirmDeleteRecord(index);
+        } else if (!canEdit) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Editing allowed only within 5 minutes of creation')),
+          );
         }
+
       },
       itemBuilder: (context) => [
         PopupMenuItem(
-            value: 'edit', enabled: true, height: 40, child: Text('Edit')),
+          value: 'edit',
+          enabled: canEdit, 
+          height: 40, 
+          child: Text('Edit', style: TextStyle(
+            color: canEdit? null : Colors.grey,
+          ),)
+        ),
         PopupMenuItem(
-            value: 'delete', enabled: true, height: 40, child: Text('Delete')),
+          value: 'delete', 
+          enabled: canEdit, 
+          height: 40, 
+          child: Text('Delete', style: TextStyle(
+            color: canEdit? null : Colors.grey,
+          ),)
+        ),
       ],
     );
   }
@@ -242,6 +274,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                     'value': value,
                     'status': status,
                     'date': DateTime.now().toIso8601String().substring(0, 10),
+                    'timestamp': DateTime.now().millisecondsSinceEpoch,
                   });
                   _saveRecords();
                 });
@@ -305,12 +338,11 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                   axisNameWidget: const Text("Number of records"),
                   axisNameSize: 25,
                   sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 30,
-                    getTitlesWidget: (value, meta) {
-                     return Text((value + 1).toInt().toString());
-                    }
-                  ))),
+                      showTitles: true,
+                      reservedSize: 30,
+                      getTitlesWidget: (value, meta) {
+                        return Text((value + 1).toInt().toString());
+                      }))),
           borderData: FlBorderData(show: true),
           barGroups: records.asMap().entries.map((entry) {
             return BarChartGroupData(
