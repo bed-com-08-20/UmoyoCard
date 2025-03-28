@@ -67,26 +67,20 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
     _loadRecords();
   }
 
-  // Load records from SharedPreferences
-  void _loadRecords() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> savedRecords = prefs.getStringList('bloodPressureRecords') ?? [];
-    
-    setState(() {
-      records = savedRecords
-          .map((record) => BloodPressureRecord.fromMap(jsonDecode(record)))
-          .toList();
-    });
+   void _saveRecords() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> recordsJson = records.map((record) => jsonEncode(record.toMap())).toList();
+    prefs.setStringList('records', recordsJson);
   }
 
-  // Save records to SharedPreferences
-  // ignore: unused_element
-  void _saveRecords() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> recordsToSave = records
-        .map((record) => jsonEncode(record.toMap()))
-        .toList();
-    await prefs.setStringList('bloodPressureRecords', recordsToSave);
+  void _loadRecords() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String>? recordsJson = prefs.getStringList('records');
+    if (recordsJson != null) {
+      setState(() {
+        records = recordsJson.map((json) => BloodPressureRecord.fromMap(jsonDecode(json))).toList();
+      });
+    }
   }
 
   void addOrEditRecord({int? index}) {
@@ -151,6 +145,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                       color: categoryColor,
                     );
                   }
+                  _saveRecords();
                 });
                 Navigator.pop(context);
               },
@@ -188,6 +183,9 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
         );
       },
     );
+  }
+   bool _isWithinEditTime(DateTime date) {
+    return DateTime.now().difference(date).inMinutes <= 5;
   }
 
   @override
@@ -253,38 +251,27 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                     children: records.asMap().entries.map((entry) {
                       int index = entry.key;
                       BloodPressureRecord record = entry.value;
+                      bool canEdit = _isWithinEditTime(record.date);
+                      
                       return Card(
                         margin: EdgeInsets.symmetric(vertical: 8),
                         child: ListTile(
                           leading: CircleAvatar(backgroundColor: record.color),
                           title: Text("${record.systolic}/${record.diastolic} mmHg"),
                           subtitle: Text("${record.category}\n${record.date.day}-${record.date.month}-${record.date.year}"),
-                          trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                   children: [
-                                     Container(
-                                      decoration: BoxDecoration(
-                                      color: Colors.blue.shade100,
-                                      shape: BoxShape.circle,
-                                        ),
-                                    child: IconButton(
-                                    icon: Icon(Icons.edit, color: Colors.blue),
-                                    onPressed: () => addOrEditRecord(index: index),
-                                      ),
-                                    ),
-                                  SizedBox(width: 8),
-                                  Container(
-                                  decoration: BoxDecoration(
-                                  color: Colors.red.shade100,
-                                  shape: BoxShape.circle,
-                                    ),
-                                   child: IconButton(
-                                    icon: Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => _confirmDelete(index),
-                                    ),
-                                ),
-                           ],
-                          ),
+                          trailing: PopupMenuButton<int>(
+                            onSelected: (value) {
+                              if (value == 0) {
+                                addOrEditRecord(index: index);
+                               } else if (value == 1) {
+                                _confirmDelete(index);
+                               }
+                              },
+                              itemBuilder: (context) => [
+                              PopupMenuItem(value: 0, child: Text("Edit", style: TextStyle(color: canEdit ? Colors.black : Colors.grey))),
+                              PopupMenuItem(value: 1, child: Text("Delete", style: TextStyle(color: canEdit ? Colors.black : Colors.grey))),
+                            ],
+                          ), 
                         ),
                       );
                     }).toList(),
