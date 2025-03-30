@@ -37,25 +37,21 @@ class _TimelineScreenState extends State<TimelineScreen> {
     await prefs.setStringList('savedImages', savedImages);
   }
 
-  // Export text to PDF
-  Future<void> _exportTextToPdf(String text) async {
+  // Export content to PDF
+  Future<void> _exportToPdf(String? text, String? imagePath) async {
     final pdf = pw.Document();
     pdf.addPage(
       pw.Page(build: (pw.Context context) {
-        return pw.Center(child: pw.Text(text));
-      }),
-    );
-    await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save());
-  }
-
-  // Export image to PDF
-  Future<void> _exportImageToPdf(String imagePath) async {
-    final pdf = pw.Document();
-    final image = pw.MemoryImage(File(imagePath).readAsBytesSync());
-    pdf.addPage(
-      pw.Page(build: (pw.Context context) {
-        return pw.Center(child: pw.Image(image));
+        final widgets = <pw.Widget>[];
+        if (text != null) {
+          widgets.add(pw.Text(text));
+        }
+        if (imagePath != null) {
+          final image = pw.MemoryImage(File(imagePath).readAsBytesSync());
+          widgets.add(pw.SizedBox(height: 20));
+          widgets.add(pw.Image(image));
+        }
+        return pw.Column(children: widgets);
       }),
     );
     await Printing.layoutPdf(
@@ -63,9 +59,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   // Edit text record
-  void _editText(String text) {
-    final index = savedTexts.indexOf(text);
-    final controller = TextEditingController(text: text);
+  void _editText(int index) {
+    final controller = TextEditingController(text: savedTexts[index]);
     showDialog(
       context: context,
       builder: (context) {
@@ -98,24 +93,45 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  // Delete a text record
-  void _deleteText(String text) {
+  // Delete a record
+  void _deleteRecord(int index) {
     setState(() {
-      savedTexts.remove(text);
+      savedTexts.removeAt(index);
+      if (index < savedImages.length) {
+        savedImages.removeAt(index);
+      }
       _updatePreferences();
     });
   }
 
-  // Delete an image record
-  void _deleteImage(String imagePath) {
-    setState(() {
-      savedImages.remove(imagePath);
-      _updatePreferences();
-    });
+  // Show full screen image
+  void _showFullImage(String imagePath) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Full Image'),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.file(File(imagePath)),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
-  // Build timeline item for text record
-  Widget _buildTimelineTextItem(String text) {
+  // Build timeline item combining text and image
+  Widget _buildTimelineItem(int index) {
+    final hasText = index < savedTexts.length;
+    final hasImage = index < savedImages.length;
+
+    if (!hasText && !hasImage) return const SizedBox();
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -132,7 +148,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
             ),
             Container(
               width: 2,
-              height: 60,
+              height: hasImage ? 200 : 60,
               color: Colors.blue,
             ),
           ],
@@ -142,35 +158,74 @@ class _TimelineScreenState extends State<TimelineScreen> {
         Expanded(
           child: Card(
             margin: const EdgeInsets.only(bottom: 16.0),
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  Expanded(
-                      child:
-                          Text(text, style: const TextStyle(fontSize: 14.0))),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (hasText)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                          child: Text(savedTexts[index],
+                              style: const TextStyle(fontSize: 14.0)),
+                        ),
+                      if (hasImage)
+                        GestureDetector(
+                          onTap: () => _showFullImage(savedImages[index]),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4.0),
+                            child: Image.file(
+                              File(savedImages[index]),
+                              fit: BoxFit.contain,
+                              width: double.infinity,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 20),
                     onSelected: (value) {
-                      if (value == 'edit') {
-                        _editText(text);
+                      if (value == 'edit' && hasText) {
+                        _editText(index);
                       } else if (value == 'export') {
-                        _exportTextToPdf(text);
+                        _exportToPdf(
+                          hasText ? savedTexts[index] : null,
+                          hasImage ? savedImages[index] : null,
+                        );
                       } else if (value == 'delete') {
-                        _deleteText(text);
+                        _deleteRecord(index);
                       }
                     },
                     itemBuilder: (BuildContext context) {
-                      return {'edit', 'export', 'delete'}.map((String choice) {
-                        return PopupMenuItem<String>(
-                          value: choice,
-                          child: Text(choice),
-                        );
-                      }).toList();
+                      final items = <PopupMenuItem<String>>[];
+                      if (hasText) {
+                        items.add(const PopupMenuItem<String>(
+                          value: 'edit',
+                          child: Text('Edit'),
+                        ));
+                      }
+                      items.addAll([
+                        const PopupMenuItem<String>(
+                          value: 'export',
+                          child: Text('Export'),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Text('Delete'),
+                        ),
+                      ]);
+                      return items;
                     },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -178,72 +233,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  // Build timeline item for image record
-  Widget _buildTimelineImageItem(String imagePath) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Timeline indicator
-        Column(
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: const BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
-              ),
-            ),
-            Container(
-              width: 2,
-              height: 60,
-              color: Colors.green,
-            ),
-          ],
-        ),
-        const SizedBox(width: 16.0),
-        // Record content with image and three-dots menu
-        Expanded(
-          child: Card(
-            margin: const EdgeInsets.only(bottom: 16.0),
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Image.file(File(imagePath),
-                        height: 100, fit: BoxFit.cover),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert),
-                    onSelected: (value) {
-                      if (value == 'export') {
-                        _exportImageToPdf(imagePath);
-                      } else if (value == 'delete') {
-                        _deleteImage(imagePath);
-                      }
-                    },
-                    itemBuilder: (BuildContext context) {
-                      return {'export', 'delete'}.map((String choice) {
-                        return PopupMenuItem<String>(
-                          value: choice,
-                          child: Text(choice),
-                        );
-                      }).toList();
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Build the timeline view combining texts and images
   @override
   Widget build(BuildContext context) {
+    final itemCount = savedTexts.length > savedImages.length
+        ? savedTexts.length
+        : savedImages.length;
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -257,7 +252,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
             color: Colors.blueAccent,
           ),
         ),
-        // title: const Text("Timeline")
       ),
       body: RefreshIndicator(
         onRefresh: _loadSavedData,
@@ -267,32 +261,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Saved Texts",
-                  style:
-                      TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16.0),
-              savedTexts.isEmpty
-                  ? const Text("No texts saved.")
-                  : Column(
-                      // Reverse the list so that the latest text is on top
-                      children: savedTexts.reversed
-                          .map((text) => _buildTimelineTextItem(text))
-                          .toList(),
-                    ),
-              const SizedBox(height: 32.0),
-              const Text("Saved Images",
-                  style:
-                      TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16.0),
-              savedImages.isEmpty
-                  ? const Text("No images saved.")
-                  : Column(
-                      // Reverse the list so that the latest image is on top
-                      children: savedImages.reversed
-                          .map(
-                              (imagePath) => _buildTimelineImageItem(imagePath))
-                          .toList(),
-                    ),
+              if (itemCount > 0)
+                Column(
+                  children: List.generate(itemCount, (index) {
+                    return _buildTimelineItem(index);
+                  }).reversed.toList(),
+                )
+              else
+                const Center(child: Text("No entries saved.")),
             ],
           ),
         ),
