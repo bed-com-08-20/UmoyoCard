@@ -120,7 +120,7 @@ class HomeContent extends StatelessWidget {
                         _buildQuickLinkCard(
                           context,
                           'Body Weight',
-                          Icons.favorite,
+                          Icons.scale,
                               () => _handleQuickLinkTap(context, 'Body Weight'),
                         ),
                         _buildQuickLinkCard(
@@ -261,6 +261,7 @@ const quickLinks = [
   {'icon': Icons.timeline, 'label': 'Recent Timeline'},
   {'icon': Icons.favorite, 'label': 'Blood Pressure'},
   {'icon': Icons.medical_services, 'label': 'Blood Sugar'},
+  {'icon': Icons.scale, 'label': 'Body Weight'},
 ];
 
 class RecentTimelineCard extends StatefulWidget {
