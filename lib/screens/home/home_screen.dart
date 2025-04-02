@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/profile/profile_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_pressure_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
+import 'package:umoyocard/screens/records/health_insights/body_weight_screen.dart';
 import 'package:umoyocard/screens/records/record_screen.dart';
 import 'package:umoyocard/screens/home/ocr_screen.dart';
 import 'package:umoyocard/screens/records/timeline_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -63,6 +66,8 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class HomeContent extends StatelessWidget {
+  const HomeContent({super.key});
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -111,6 +116,12 @@ class HomeContent extends StatelessWidget {
                           'Blood Pressure',
                           Icons.favorite,
                           () => _handleQuickLinkTap(context, 'Blood Pressure'),
+                        ),
+                        _buildQuickLinkCard(
+                          context,
+                          'Body Weight',
+                          Icons.favorite,
+                              () => _handleQuickLinkTap(context, 'Body Weight'),
                         ),
                         _buildQuickLinkCard(
                           context,
@@ -191,6 +202,11 @@ class HomeContent extends StatelessWidget {
         context,
         MaterialPageRoute(builder: (context) => BloodPressureScreen()),
       );
+    } else if (label == 'Body Weight') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => WeightTrackingScreen()),
+      );
     } else if (label == 'Blood Sugar') {
       Navigator.push(
         context,
@@ -204,17 +220,22 @@ class HomeContent extends StatelessWidget {
   }
 }
 
-class _QuickLinkCard extends StatelessWidget {
+class _QuickLinkCard extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
 
-  _QuickLinkCard({required this.icon, required this.label});
+  _QuickLinkCard({required this.icon, required this.label, this.onTap});
 
+  @override
+  State<_QuickLinkCard> createState() => _QuickLinkCardState();
+}
+
+class _QuickLinkCardState extends State<_QuickLinkCard> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
         padding: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
@@ -225,9 +246,9 @@ class _QuickLinkCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 30, color: Colors.blue),
+            Icon(widget.icon, size: 30, color: Colors.blue),
             SizedBox(height: 8.0),
-            Text(label, style: TextStyle(fontSize: 14.0)),
+            Text(widget.label, style: TextStyle(fontSize: 14.0)),
           ],
         ),
       ),
@@ -244,7 +265,7 @@ const quickLinks = [
 
 class RecentTimelineCard extends StatefulWidget {
   final VoidCallback? onTap;
-  const RecentTimelineCard({Key? key, this.onTap}) : super(key: key);
+  const RecentTimelineCard({super.key, this.onTap});
 
   @override
   _RecentTimelineCardState createState() => _RecentTimelineCardState();
