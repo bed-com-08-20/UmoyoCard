@@ -1,13 +1,14 @@
-buildscript{
-    repositories{
+buildscript {
+    repositories {
         google()
-        jcenter()
+        mavenCentral() // Use this instead of jcenter()
     }
-    dependencies{
-        classpath "com.google.gms.google-services:4.4.2" 
-        classpath 'com.android.tools.build:gradle:8.0.2'
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.0'
+        classpath 'com.google.gms:google-services:4.4.2'
     }
 }
+
 allprojects {
     repositories {
         google()
@@ -15,14 +16,15 @@ allprojects {
     }
 }
 
+// Ensures all modules use the same build directory
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-subprojects {
-    project.evaluationDependsOn(":app")
-}
 
+
+
+// Task to clean build files
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
