@@ -96,15 +96,21 @@ class HomeContent extends StatelessWidget {
                         _buildQuickLinkCard(
                           context,
                           'Scan Health Passport',
-                          Icons.qr_code_scanner,
+                          Icons.image_search,
                           () => _handleQuickLinkTap(
                               context, 'Scan Health Passport'),
                         ),
                         _buildQuickLinkCard(
                           context,
+                          'Scan Barcode or QR Code',
+                          Icons.qr_code_scanner,
+                          () => _handleQuickLinkTap(context, 'Scan QR Code'),
+                        ),
+                        _buildQuickLinkCard(
+                          context,
                           'Recent Timeline',
                           Icons.timeline,
-                          () => _handleQuickLinkTap(context, 'Recent Timeline'),
+                              () => _handleQuickLinkTap(context, 'Recent Timeline'),
                         ),
                       ],
                     ),
@@ -112,12 +118,6 @@ class HomeContent extends StatelessWidget {
                   Expanded(
                     child: Row(
                       children: [
-                        _buildQuickLinkCard(
-                          context,
-                          'QR Code',
-                          Icons.qr_code,
-                              () => _handleQuickLinkTap(context, 'Scan QR Code'),
-                        ),
                         _buildQuickLinkCard(
                           context,
                           'Blood Pressure',
