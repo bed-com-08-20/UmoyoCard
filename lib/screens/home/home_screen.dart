@@ -6,6 +6,7 @@ import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dar
 import 'package:umoyocard/screens/records/health_insights/body_weight_screen.dart';
 import 'package:umoyocard/screens/records/record_screen.dart';
 import 'package:umoyocard/screens/home/ocr_screen.dart';
+import 'package:umoyocard/screens/home/qr_code_screen.dart';
 import 'package:umoyocard/screens/records/timeline_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -113,6 +114,12 @@ class HomeContent extends StatelessWidget {
                       children: [
                         _buildQuickLinkCard(
                           context,
+                          'QR Code',
+                          Icons.qr_code,
+                              () => _handleQuickLinkTap(context, 'Scan QR Code'),
+                        ),
+                        _buildQuickLinkCard(
+                          context,
                           'Blood Pressure',
                           Icons.favorite,
                           () => _handleQuickLinkTap(context, 'Blood Pressure'),
@@ -191,6 +198,12 @@ class HomeContent extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => OCRScreen()),
+      );
+    }
+    else if (label == 'Scan QR Code') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => BarcodeScannerScreen()),
       );
     } else if (label == 'Recent Timeline') {
       Navigator.push(
