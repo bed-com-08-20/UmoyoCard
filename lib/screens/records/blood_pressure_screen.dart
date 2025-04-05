@@ -24,6 +24,7 @@ class BloodPressureRecord {
       'diastolic': diastolic,
       'date': date.toIso8601String(),
       'category': category,
+      // ignore: deprecated_member_use
       'color': color.value,
     };
   }
@@ -249,7 +250,6 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
             ),
           ),
            SizedBox(height: 16),
-          // The most recent record (fixed at the bottom of the screen)
           if (records.isNotEmpty)
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16),
@@ -281,8 +281,6 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                 ),
               ),
             ),
-          
-          // The rest of the records (scrollable)
           Expanded(
             flex: 3,
             child: SingleChildScrollView(
@@ -290,7 +288,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
               child: Column(
                 children: records.length > 1 
                     ? records.sublist(1).asMap().entries.map((entry) {
-                        int index = entry.key + 1; // +1 because we're using sublist(1)
+                        int index = entry.key + 1; 
                         BloodPressureRecord record = entry.value;
                         bool canEdit = _isWithinEditTime(record.date);
                         
@@ -322,12 +320,10 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                           ),
                         );
                       }).toList()
-                    : [SizedBox.shrink()], // Empty widget if no additional records
+                    : [SizedBox.shrink()],
               ),
             ),
           ),
-          
-          // Add Record button (fixed at the bottom)
           Padding(
             padding: EdgeInsets.all(16),
             child: ElevatedButton(
