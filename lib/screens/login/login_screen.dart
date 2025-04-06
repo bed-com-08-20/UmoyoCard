@@ -13,6 +13,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _nationalIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   void handleLogin() {
     String nationalId = _nationalIdController.text;
@@ -73,14 +74,42 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16.0),
+// 👇👇 Password Field with Eye Icon
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.0),
                   ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10.0),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text(
+                            'Forgot Password Screen not yet implemented!')),
+                  );
+                },
+                child: const Text(
+                  'Forgot Password?',
+                  style: TextStyle(fontSize: 16.0, color: Colors.green),
                 ),
               ),
               const SizedBox(height: 24.0),
@@ -103,20 +132,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16.0),
-              TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text(
-                            'Forgot Password Screen not yet implemented!')),
-                  );
-                },
-                child: const Text(
-                  'Forgot Password?',
-                  style: TextStyle(fontSize: 16.0, color: Colors.green),
-                ),
-              ),
-              const SizedBox(height: 32.0),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

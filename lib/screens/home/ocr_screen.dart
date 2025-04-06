@@ -91,7 +91,7 @@ Treatment: ${treatmentController.text}
   // Process OCR using Google ML Kit
   Future<void> _processOCR(File imageFile) async {
     final inputImage = InputImage.fromFile(imageFile);
-    final textRecognizer = GoogleMlKit.vision.textRecognizer();
+    final textRecognizer = TextRecognizer();
     final RecognizedText recognizedText =
         await textRecognizer.processImage(inputImage);
 
