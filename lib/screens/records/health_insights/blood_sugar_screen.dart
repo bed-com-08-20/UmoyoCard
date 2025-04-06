@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:umoyocard/screens/home/home_screen.dart';
+import 'package:share_plus/share_plus.dart';
 
 class BloodSugarScreen extends StatefulWidget {
   const BloodSugarScreen({super.key});
@@ -176,6 +177,23 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
+    void _shareRecord(int index) {
+    if (index >= records.length) return;
+    
+    final record = records[index];
+    final dateTime = DateTime.parse(record['date']).toLocal();
+    final formattedDate = '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    
+    final shareText = '''
+      Blood Sugar Record:
+      - Blood sugar: ${record['value']} mmol/L
+      - Status: ${record['status']}
+      - Date and Time: $formattedDate
+      ''';
+
+    Share.share(shareText);
+  }
+
   Widget _buildEllipsisMenu(int index) {
     final canEdit = _isEditingAllowed(index);
 
@@ -185,6 +203,8 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
           _showEditRecordDialog(index);
         } else if (value == 'delete' && canEdit) {
           _confirmDeleteRecord(index);
+        } else if (value == 'share') {
+         _shareRecord(index);
         } else if (!canEdit) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Editing allowed only within 5 minutes of creation')),
@@ -193,6 +213,13 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
 
       },
       itemBuilder: (context) => [
+         
+        PopupMenuItem(
+          value: 'share',
+          height: 40,
+          child: Text('Share'),
+        ),
+
         PopupMenuItem(
           value: 'edit',
           enabled: canEdit, 
@@ -408,6 +435,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     padding: const EdgeInsets.symmetric(horizontal: 16.0),
     child: DropdownButton<String>(
       value: _selectedMonth,
+      dropdownColor: Colors.white70,
       isExpanded: true,
       items: _availableMonths.map((month) {
         return DropdownMenuItem(
