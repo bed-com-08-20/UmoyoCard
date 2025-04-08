@@ -1,19 +1,14 @@
-
 import 'package:flutter/material.dart';
-import 'package:umoyocard/screens/login/loading_screen.dart';
-import 'package:provider/provider.dart';
-import 'package:umoyocard/providers/password_providers.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:umoyocard/screens/login/login_screen.dart';
 import 'package:umoyocard/screens/home/home_screen.dart';
+import 'package:umoyocard/screens/login/create_account.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => PasswordProvider(),
-      child: const MyApp(),
-    ),
-  );
+  await Firebase.initializeApp();
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -27,11 +22,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      initialRoute: '/login', // Default screen when app starts
+      initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
-        '/loading': (context) => LoadingScreen(),
-        '/home': (context) => HomeScreen(),
+        '/create-account': (context) => const CreateAccount(),
+        '/home': (context) => const HomeScreen(),
       },
     );
   }
