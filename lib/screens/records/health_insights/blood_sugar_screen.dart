@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:umoyocard/screens/home/home_screen.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:intl/intl.dart';
 
 class BloodSugarScreen extends StatefulWidget {
   const BloodSugarScreen({super.key});
@@ -33,11 +34,11 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     final months = <String>{};
     for (final record in records) {
       final date = DateTime.parse(record['date']);
-      final monthYear = '${date.month}/${date.year}';
+      final monthYear = DateFormat('MMMM yyyy').format(date);
       months.add(monthYear);
     }
     setState(() {
-      _availableMonths = months.toList()..sort((a, b) => b.compareTo(a));
+      _availableMonths = months.toList()..sort(_compareMonths);
       if (_availableMonths.isNotEmpty && _selectedMonth.isEmpty) {
         _selectedMonth = _availableMonths.first;
       }
@@ -177,13 +178,14 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
-    void _shareRecord(int index) {
+  void _shareRecord(int index) {
     if (index >= records.length) return;
-    
+
     final record = records[index];
     final dateTime = DateTime.parse(record['date']).toLocal();
-    final formattedDate = '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    
+    final formattedDate =
+        '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+
     final shareText = '''
       Blood Sugar Record:
       - Blood sugar: ${record['value']} mmol/L
@@ -204,38 +206,41 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         } else if (value == 'delete' && canEdit) {
           _confirmDeleteRecord(index);
         } else if (value == 'share') {
-         _shareRecord(index);
+          _shareRecord(index);
         } else if (!canEdit) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Editing allowed only within 5 minutes of creation')),
+            SnackBar(
+                content:
+                    Text('Editing allowed only within 5 minutes of creation')),
           );
         }
-
       },
       itemBuilder: (context) => [
-         
         PopupMenuItem(
           value: 'share',
           height: 40,
           child: Text('Share'),
         ),
-
         PopupMenuItem(
-          value: 'edit',
-          enabled: canEdit, 
-          height: 40, 
-          child: Text('Edit', style: TextStyle(
-            color: canEdit? null : Colors.grey,
-          ),)
-        ),
+            value: 'edit',
+            enabled: canEdit,
+            height: 40,
+            child: Text(
+              'Edit',
+              style: TextStyle(
+                color: canEdit ? null : Colors.grey,
+              ),
+            )),
         PopupMenuItem(
-          value: 'delete', 
-          enabled: canEdit, 
-          height: 40, 
-          child: Text('Delete', style: TextStyle(
-            color: canEdit? null : Colors.grey,
-          ),)
-        ),
+            value: 'delete',
+            enabled: canEdit,
+            height: 40,
+            child: Text(
+              'Delete',
+              style: TextStyle(
+                color: canEdit ? null : Colors.grey,
+              ),
+            )),
       ],
     );
   }
@@ -428,32 +433,47 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     return _buildRecordCard(records[0], 0);
   }
 
+  int _compareMonths(String a, String b) {
+    final dateA = DateFormat('MMMM yyyy').parse(a);
+    final dateB = DateFormat('MMMM yyyy').parse(b);
+    return dateB.compareTo(dateA);
+  }
+
   Widget _buildMonthSelector() {
-  if (_availableMonths.isEmpty) return SizedBox();
-  
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: DropdownButton<String>(
-      value: _selectedMonth,
-      dropdownColor: Colors.white70,
-      isExpanded: true,
-      items: _availableMonths.map((month) {
-        return DropdownMenuItem(
-          value: month,
-          child: Text(month),
-        );
-      }).toList(),
-      onChanged: (value) {
-        setState(() {
-          _selectedMonth = value!;
-        });
-      },
-    ),
-  );
-}
+    if (_availableMonths.isEmpty) return SizedBox();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.blue),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: DropdownButton<String>(
+          value: _selectedMonth,
+          isExpanded: true,
+          underline: SizedBox(),
+          items: _availableMonths.map((month) {
+            return DropdownMenuItem(
+              value: month,
+              child: Text(
+                month,
+                style: TextStyle(fontSize: 16),
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedMonth = value!;
+            });
+          },
+        ),
+      ),
+    );
+  }
 
   Widget _buildPreviousRecordsList() {
-      
     final filteredRecords = records.where((record) {
       if (_selectedMonth.isEmpty) return true;
       final date = DateTime.parse(record['date']);
@@ -464,10 +484,10 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: ListView.builder(
-          itemCount: filteredRecords.length> 1 ? records.length - 1 : 0,
+          itemCount: filteredRecords.length > 1 ? records.length - 1 : 0,
           itemBuilder: (context, index) {
-           return _buildRecordCard(filteredRecords[index + 1], index + 1);
-        },
+            return _buildRecordCard(filteredRecords[index + 1], index + 1);
+          },
         ),
       ),
     );
@@ -500,7 +520,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-              _buildMonthSelector(),
+                _buildMonthSelector(),
                 _buildBarChart(),
                 SizedBox(height: 10),
                 _buildLatestRecordCard(),
