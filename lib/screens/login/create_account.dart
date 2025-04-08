@@ -1,230 +1,165 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:umoyocard/screens/login/create_password.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class CreateAccount extends StatelessWidget {
+class CreateAccount extends StatefulWidget {
   const CreateAccount({super.key});
+
+  @override
+  State<CreateAccount> createState() => _CreateAccountState();
+}
+
+class _CreateAccountState extends State<CreateAccount> {
+  final _formKey = GlobalKey<FormState>();
+  final _fullNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  bool _isLoading = false;
+  final _auth = FirebaseAuth.instance;
+
+  Future<void> _registerUser() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      await userCredential.user?.updateDisplayName(_fullNameController.text.trim());
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Account created successfully! 🎉")),
+      );
+
+      // Navigate to home or profile setup
+      // Navigator.pushReplacement(...);
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      final message = switch (e.code) {
+        'email-already-in-use' => "Email is already in use.",
+        'weak-password' => "Password should be at least 6 characters.",
+        'invalid-email' => "Please enter a valid email address.",
+        _ => "Something went wrong. Try again.",
+      };
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
         title: const Text("Create an Account"),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const Text(
-                "Sign up to get started",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 16),
-              CreateAccountForm(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  "Sign up with just a few details",
+                  style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
 
-class CreateAccountForm extends StatefulWidget {
-  @override
-  _CreateAccountFormState createState() => _CreateAccountFormState();
-}
+                // Full Name
+                TextFormField(
+                  controller: _fullNameController,
+                  decoration: const InputDecoration(
+                    labelText: "Full Name",
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) =>
+                  value == null || value.trim().isEmpty ? "Full name is required" : null,
+                ),
+                const SizedBox(height: 16),
 
-class _CreateAccountFormState extends State<CreateAccountForm> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _fullnameController = TextEditingController();
-  final TextEditingController _dobController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _nationalIdController = TextEditingController();
-  final TextEditingController _nationalityController = TextEditingController();
-  final TextEditingController _genderController = TextEditingController();
+                // Email
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: "Email",
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) =>
+                  value == null || !value.contains("@") ? "Enter a valid email" : null,
+                ),
+                const SizedBox(height: 16),
 
-  final Map<String, String?> _errorMessages = {};
+                // Password
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(
+                    labelText: "Password",
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.length < 6) {
+                      return "Password must be at least 6 characters";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
 
-  Future<void> _saveToFirebase() async {
-    bool isValid = true;
+                // Confirm Password
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  decoration: const InputDecoration(
+                    labelText: "Confirm Password",
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                  validator: (value) {
+                    if (value != _passwordController.text) {
+                      return "Passwords do not match";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
 
-    setState(() {
-      _errorMessages.clear();
-      if (_fullnameController.text.isEmpty) {
-        _errorMessages['fullname'] = "This field is required";
-        isValid = false;
-      }
-      if (_dobController.text.isEmpty) {
-        _errorMessages['dob'] = "This field is required";
-        isValid = false;
-      }
-      if (_addressController.text.isEmpty) {
-        _errorMessages['address'] = "This field is required";
-        isValid = false;
-      }
-      if (_phoneController.text.isEmpty) {
-        _errorMessages['phone'] = "This field is required";
-        isValid = false;
-      }
-      if (_emailController.text.isEmpty) {
-        _errorMessages['email'] = "This field is required";
-        isValid = false;
-      }
-      if (_nationalIdController.text.isEmpty) {
-        _errorMessages['national_id'] = "This field is required";
-        isValid = false;
-      }
-      if (_nationalityController.text.isEmpty) {
-        _errorMessages['nationality'] = "This field is required";
-        isValid = false;
-      }
-      if (_genderController.text.isEmpty) {
-        _errorMessages['gender'] = "This field is required";
-        isValid = false;
-      }
-    });
-
-    if (isValid) {
-      try {
-        await FirebaseFirestore.instance.collection('users').add({
-          'fullname': _fullnameController.text,
-          'dob': _dobController.text,
-          'address': _addressController.text,
-          'phone': _phoneController.text,
-          'email': _emailController.text,
-          'national_id': _nationalIdController.text,
-          'nationality': _nationalityController.text,
-          'gender': _genderController.text,
-          'created_at': Timestamp.now(),
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Account created successfully! 🎉")),
-        );
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => CreatePassword()),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          FormTextField(
-            label: "Fullname",
-            controller: _fullnameController,
-            errorText: _errorMessages['fullname'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['fullname'] = null),
-          ),
-          FormTextField(
-            label: "Date of Birth",
-            controller: _dobController,
-            errorText: _errorMessages['dob'],
-            onChanged: (value) => setState(() => _errorMessages['dob'] = null),
-          ),
-          FormTextField(
-            label: "Address",
-            controller: _addressController,
-            errorText: _errorMessages['address'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['address'] = null),
-          ),
-          FormTextField(
-            label: "Phone Number",
-            controller: _phoneController,
-            errorText: _errorMessages['phone'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['phone'] = null),
-          ),
-          FormTextField(
-            label: "Email Address",
-            controller: _emailController,
-            errorText: _errorMessages['email'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['email'] = null),
-          ),
-          FormTextField(
-            label: "National ID",
-            controller: _nationalIdController,
-            errorText: _errorMessages['national_id'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['national_id'] = null),
-          ),
-          FormTextField(
-            label: "Nationality",
-            controller: _nationalityController,
-            errorText: _errorMessages['nationality'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['nationality'] = null),
-          ),
-          FormTextField(
-            label: "Gender",
-            controller: _genderController,
-            errorText: _errorMessages['gender'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['gender'] = null),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _saveToFirebase,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 50),
-              backgroundColor: Colors.blueAccent,
+                // Create Account Button
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _registerUser,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    backgroundColor: Colors.blueAccent,
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text("Create Account", style: TextStyle(color: Colors.white)),
+                ),
+              ],
             ),
-            child: const Text("Next", style: TextStyle(color: Colors.white)),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class FormTextField extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-  final String? errorText;
-  final ValueChanged<String> onChanged;
-
-  const FormTextField({
-    super.key,
-    required this.label,
-    required this.controller,
-    this.errorText,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(),
-          errorText: errorText,
         ),
       ),
     );
