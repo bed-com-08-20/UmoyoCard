@@ -1,0 +1,2 @@
+C:/Users/HARRY YAMIKANI PETER/Desktop/UmoyoKhadi/UmoyoCard/android/app/.cxx/Debug/601g5r11/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/HARRY YAMIKANI PETER/Desktop/UmoyoKhadi/UmoyoCard/android/app/.cxx/Debug/601g5r11/x86_64/CMakeFiles/rebuild_cache.dir

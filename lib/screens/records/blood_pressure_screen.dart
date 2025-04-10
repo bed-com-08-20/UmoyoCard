@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart';
 
 class BloodPressureRecord {
   int systolic;
@@ -24,7 +25,6 @@ class BloodPressureRecord {
       'diastolic': diastolic,
       'date': date.toIso8601String(),
       'category': category,
-      // ignore: deprecated_member_use
       'color': color.value,
     };
   }
@@ -43,9 +43,14 @@ class BloodPressureRecord {
     if (systolic < 120 && diastolic < 80) return "Normal";
     if (systolic >= 120 && systolic < 130 && diastolic < 80) return "Elevated";
     if ((systolic >= 130 && systolic < 140) || (diastolic >= 80 && diastolic < 90)) return "Hypertension Stage 1";
-    if (systolic >= 140 && systolic <= 180 || diastolic >= 90 && diastolic <=120) return "Hypertension Stage 2";
+    if (systolic >= 140 && systolic <= 180 || diastolic >= 90 && diastolic <= 120) return "Hypertension Stage 2";
     if (systolic > 180 || diastolic > 120) return "Hypertensive Crisis";
     return "Not in range";
+  }
+
+  String get formattedDate {
+    final monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return "${date.day} ${monthNames[date.month - 1]} ${date.year}";
   }
 }
 
@@ -58,6 +63,12 @@ class BloodPressureScreen extends StatefulWidget {
 
 class _BloodPressureScreenState extends State<BloodPressureScreen> {
   List<BloodPressureRecord> records = [];
+  List<BloodPressureRecord> filteredRecords = [];
+  int? selectedMonth;
+  int? selectedYear;
+  List<int> years = [];
+  final monthNames = ["January", "February", "March", "April", "May", "June", 
+                     "July", "August", "September", "October", "November", "December"];
 
   @override
   void initState() {
@@ -77,13 +88,70 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
     if (recordsJson != null) {
       setState(() {
         records = recordsJson.map((json) => BloodPressureRecord.fromMap(jsonDecode(json))).toList();
+        _updateYearsList();
+        _filterRecords();
       });
     }
   }
 
+  void _updateYearsList() {
+    if (records.isEmpty) return;
+    
+    final uniqueYears = records.map((r) => r.date.year).toSet().toList();
+    uniqueYears.sort();
+    years = uniqueYears;
+    
+    selectedYear = years.last;
+    
+    final monthsInYear = records
+        .where((r) => r.date.year == selectedYear)
+        .map((r) => r.date.month)
+        .toSet()
+        .toList();
+    monthsInYear.sort();
+    if (monthsInYear.isNotEmpty) {
+      selectedMonth = monthsInYear.last;
+    }
+  }
+
+  void _filterRecords() {
+    if (selectedMonth == null || selectedYear == null) {
+      filteredRecords = List.from(records);
+    } else {
+      filteredRecords = records.where((record) {
+        return record.date.month == selectedMonth && record.date.year == selectedYear;
+      }).toList();
+    }
+    filteredRecords.sort((a, b) => b.date.compareTo(a.date)); // Sort by newest first
+  }
+
+  void _shareRecord(BloodPressureRecord record) {
+    final text = "Blood Pressure Record:\n"
+                "${record.systolic}/${record.diastolic} mmHg\n"
+                "Category: ${record.category}\n"
+                "Date: ${record.formattedDate}";
+    
+    Share.share(text, subject: 'My Blood Pressure Record');
+  }
+
   void addOrEditRecord({int? index}) {
-    int systolicValue = index != null ? records[index].systolic : 120;
-    int diastolicValue = index != null ? records[index].diastolic : 80;
+    // Check if editing is allowed (only if within 5 minutes)
+    if (index != null && !_isWithinEditTime(records[index].date)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Editing is only allowed within 5 minutes of record creation")),
+      );
+      return;
+    }
+
+    int? systolicValue;
+    int? diastolicValue;
+    final systolicController = TextEditingController();
+    final diastolicController = TextEditingController();
+
+    if (index != null) {
+      systolicController.text = records[index].systolic.toString();
+      diastolicController.text = records[index].diastolic.toString();
+    }
 
     showDialog(
       context: context,
@@ -95,14 +163,16 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
+                  controller: systolicController,
                   decoration: InputDecoration(labelText: "Systolic"),
                   keyboardType: TextInputType.number,
-                  onChanged: (value) => systolicValue = int.tryParse(value) ?? systolicValue,
+                  onChanged: (value) => systolicValue = int.tryParse(value),
                 ),
                 TextField(
+                  controller: diastolicController,
                   decoration: InputDecoration(labelText: "Diastolic"),
                   keyboardType: TextInputType.number,
-                  onChanged: (value) => diastolicValue = int.tryParse(value) ?? diastolicValue,
+                  onChanged: (value) => diastolicValue = int.tryParse(value),
                 ),
               ],
             ),
@@ -114,36 +184,57 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
             ),
             ElevatedButton(
               onPressed: () {
+                if (systolicController.text.isEmpty && diastolicController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Please enter values for both systolic and diastolic")),
+                  );
+                  return;
+                } else if (systolicController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("No value specified for systolic")),
+                  );
+                  return;
+                } else if (diastolicController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("No value specified for diastolic")),
+                  );
+                  return;
+                }
+                systolicValue = int.tryParse(systolicController.text) ?? 0;
+                diastolicValue = int.tryParse(diastolicController.text) ?? 0;
+
                 setState(() {
-                  String category = BloodPressureRecord.getCategory(systolicValue, diastolicValue);
+                  String category = BloodPressureRecord.getCategory(systolicValue!, diastolicValue!);
                   Color categoryColor = category == "Normal"
                       ? Colors.green
-                      : category=="Hypertension Stage 1"
+                      : category == "Hypertension Stage 1"
                           ? Colors.orange
-                        : category== "Hypertension Stage 2"
-                          ? Colors.black 
-                          : category == "Hypertensive Crisis"
-                              ? Colors.red
-                              : Colors.blue;
+                          : category == "Hypertension Stage 2"
+                              ? Colors.black 
+                              : category == "Hypertensive Crisis"
+                                  ? Colors.red
+                                  : Colors.blue;
 
                   if (index == null) {
                     records.insert(0, BloodPressureRecord(
-                      systolic: systolicValue,
-                      diastolic: diastolicValue,
+                      systolic: systolicValue!,
+                      diastolic: diastolicValue!,
                       date: DateTime.now(),
                       category: category,
                       color: categoryColor,
                     ));
                   } else {
                     records[index] = BloodPressureRecord(
-                      systolic: systolicValue,
-                      diastolic: diastolicValue,
-                      date: DateTime.now(),
+                      systolic: systolicValue!,
+                      diastolic: diastolicValue!,
+                      date: records[index].date, // Keep original date for edits
                       category: category,
                       color: categoryColor,
                     );
                   }
                   _saveRecords();
+                  _updateYearsList();
+                  _filterRecords();
                 });
                 Navigator.pop(context);
               },
@@ -156,6 +247,14 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
   }
 
   void _confirmDelete(int index) {
+    // Check if deletion is allowed (only if within 5 minutes)
+    if (!_isWithinEditTime(records[index].date)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Deletion is only allowed within 5 minutes of record creation")),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) {
@@ -172,6 +271,8 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                 setState(() {
                   records.removeAt(index);
                   _saveRecords();
+                  _updateYearsList();
+                  _filterRecords();
                 });
                 Navigator.pop(context);
               },
@@ -197,84 +298,151 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
       ),
       body: Column(
         children: [
-          // ignore: avoid_unnecessary_containers
           Container(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+            padding: EdgeInsets.all(16),
+            margin: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.lightBlue[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.lightBlue[100],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        Text("Blood Pressure Overview", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 12),
-                        // ignore: sized_box_for_whitespace
-                        Container(
-                          height: 200,
-                          child: BarChart(
-                            BarChartData(
-                              borderData: FlBorderData(show: true),
-                              gridData: FlGridData(show: true),
-                              titlesData: FlTitlesData(
-                                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              ),
-                              barGroups: records.asMap().entries.map((entry) {
-                                int index = entry.key;
-                                BloodPressureRecord record = entry.value;
-                                return BarChartGroupData(
-                                  x: index,
-                                  barRods: [
-                                    BarChartRodData(
-                                      toY: record.systolic.toDouble(),
-                                      color: record.color,
-                                      width: 12,
-                                    )
-                                  ],
-                                );
-                              }).toList(),
-                            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Blood Pressure Overview", 
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                   DropdownButton<int>(
+                      value: selectedMonth,
+                      hint: Text('Month'),
+                      items: List.generate(12, (index) => index + 1).map((int month) {
+                        return DropdownMenuItem<int>(
+                          value: month,
+                          child: Text(monthNames[month - 1]),
+                        );
+                      }).toList(),
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          selectedMonth = newValue;
+                          _filterRecords();
+                          });
+                        },
+                      ),
+                      
+                    DropdownButton<int>(
+                      value: selectedYear,
+                      hint: Text('Year'),
+                      items: years.map((int year) {
+                        return DropdownMenuItem<int>(
+                          value: year,
+                          child: Text(year.toString()),
+                        );
+                      }).toList(),
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          selectedYear = newValue;
+                          selectedMonth = null;
+                          _filterRecords();
+                        });
+                      },
+                      ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                // ignore: sized_box_for_whitespace
+                Container(
+                  height: 180,
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: BarChart(
+                    BarChartData(
+                      alignment: BarChartAlignment.spaceAround,
+                      barTouchData: BarTouchData(enabled: true),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                                return Text('${value.toInt() + 1}');
+                            },
                           ),
                         ),
-                      ],
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 30,
+                          ),
+                        ),
+                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      borderData: FlBorderData(show: true),
+                      gridData: FlGridData(show: true),
+                      barGroups: filteredRecords.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        BloodPressureRecord record = entry.value;
+                        return BarChartGroupData(
+                          x: index,
+                          barRods: [
+                            BarChartRodData(
+                              toY: record.systolic.toDouble(),
+                              color: record.color,
+                              width: 10,
+                            )
+                          ],
+                        );
+                      }).toList(),
                     ),
                   ),
-                ],
+                ),
+              ],
               ),
             ),
           ),
-           SizedBox(height: 16),
-          if (records.isNotEmpty)
+          SizedBox(height: 16),
+          if (filteredRecords.isNotEmpty)
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.2),
+              padding: EdgeInsets.symmetric(horizontal: 8),
               child: Card(
                 margin: EdgeInsets.only(bottom: 8),
                 child: ListTile(
-                  leading: CircleAvatar(backgroundColor: records.first.color),
-                  title: Text("${records.first.systolic}/${records.first.diastolic} mmHg"),
-                  subtitle: Text("${records.first.category}\n${records.first.date.day}-${records.first.date.month}-${records.first.date.year}"),
+                  leading: CircleAvatar(backgroundColor: filteredRecords.first.color),
+                  title: Text("${filteredRecords.first.systolic}/${filteredRecords.first.diastolic} mmHg"),
+                  subtitle: Text("${filteredRecords.first.category}\n${filteredRecords.first.formattedDate}"),
                   trailing: PopupMenuButton<int>(
                     onSelected: (value) {
+                      int originalIndex = records.indexWhere((r) => 
+                        r.date == filteredRecords.first.date && 
+                        r.systolic == filteredRecords.first.systolic && 
+                        r.diastolic == filteredRecords.first.diastolic);
+                      
                       if (value == 0) {
-                        addOrEditRecord(index: 0);
+                        addOrEditRecord(index: originalIndex);
                       } else if (value == 1) {
-                        _confirmDelete(0);
+                        _confirmDelete(originalIndex);
+                      } else if (value == 2) {
+                        _shareRecord(filteredRecords.first);
                       }
                     },
                     itemBuilder: (context) => [
                       PopupMenuItem(
                         value: 0,
-                        child: Text("Edit", style: TextStyle(color: _isWithinEditTime(records.first.date) ? Colors.black : Colors.grey)),
+                        enabled: _isWithinEditTime(filteredRecords.first.date),
+                        child: Text("Edit", style: TextStyle(color: _isWithinEditTime(filteredRecords.first.date) ? Colors.black : Colors.grey)),
                       ),
                       PopupMenuItem(
                         value: 1,
-                        child: Text("Delete", style: TextStyle(color: _isWithinEditTime(records.first.date) ? Colors.black : Colors.grey)),
+                        enabled: _isWithinEditTime(filteredRecords.first.date),
+                        child: Text("Delete", style: TextStyle(color: _isWithinEditTime(filteredRecords.first.date) ? Colors.black : Colors.grey)),
+                      ),
+                      PopupMenuItem(
+                        value: 2,
+                        child: Text("Share"),
                       ),
                     ],
                   ),
@@ -282,38 +450,49 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
               ),
             ),
           Expanded(
-            flex: 3,
             child: SingleChildScrollView(
+              physics: AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Column(
-                children: records.length > 1 
-                    ? records.sublist(1).asMap().entries.map((entry) {
-                        int index = entry.key + 1; 
-                        BloodPressureRecord record = entry.value;
+                mainAxisSize: MainAxisSize.min,
+                children: filteredRecords.length > 1 
+                    ? filteredRecords.sublist(1).map((record) {
                         bool canEdit = _isWithinEditTime(record.date);
+                        int originalIndex = records.indexWhere((r) => 
+                          r.date == record.date && 
+                          r.systolic == record.systolic && 
+                          r.diastolic == record.diastolic);
                         
                         return Card(
                           margin: EdgeInsets.symmetric(vertical: 8),
                           child: ListTile(
                             leading: CircleAvatar(backgroundColor: record.color),
                             title: Text("${record.systolic}/${record.diastolic} mmHg"),
-                            subtitle: Text("${record.category}\n${record.date.day}-${record.date.month}-${record.date.year}"),
+                            subtitle: Text("${record.category}\n${record.formattedDate}"),
                             trailing: PopupMenuButton<int>(
                               onSelected: (value) {
                                 if (value == 0) {
-                                  addOrEditRecord(index: index);
+                                  addOrEditRecord(index: originalIndex);
                                 } else if (value == 1) {
-                                  _confirmDelete(index);
-                                }
+                                  _confirmDelete(originalIndex);
+                                } else if (value == 2) {
+                                  _shareRecord(record);
+                                } 
                               },
                               itemBuilder: (context) => [
                                 PopupMenuItem(
-                                  value: 0,
+                                  value: 0, 
+                                  enabled: canEdit,
                                   child: Text("Edit", style: TextStyle(color: canEdit ? Colors.black : Colors.grey)),
                                 ),
                                 PopupMenuItem(
                                   value: 1,
+                                  enabled: canEdit,
                                   child: Text("Delete", style: TextStyle(color: canEdit ? Colors.black : Colors.grey)),
+                                ),
+                                PopupMenuItem(
+                                  value: 2,
+                                  child: Text("Share"),
                                 ),
                               ],
                             ),
@@ -324,22 +503,23 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
               ),
             ),
           ),
+          
+          // Add Record Button
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(12),
             child: ElevatedButton(
               onPressed: addOrEditRecord,
-              // ignore: sort_child_properties_last
-              child: Text("+ Add Record", style: TextStyle(fontSize: 18)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 12),
                 minimumSize: Size(double.infinity, 50),
               ),
+              child: Text("+ Add Record", style: TextStyle(fontSize: 18)),
             ),
           ),
         ],
-      ),
+       ),
     );
   }
 }
