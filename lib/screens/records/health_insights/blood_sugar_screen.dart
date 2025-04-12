@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:umoyocard/screens/home/home_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:intl/intl.dart';
 
 class BloodSugarScreen extends StatefulWidget {
-  const BloodSugarScreen({super.key});
+  BloodSugarScreen({super.key});
 
   @override
   _BloodSugarScreenState createState() => _BloodSugarScreenState();
@@ -13,7 +14,9 @@ class BloodSugarScreen extends StatefulWidget {
 
 class _BloodSugarScreenState extends State<BloodSugarScreen> {
   List<Map<String, dynamic>> records = []; // Start with no records
-  bool showAllRecords = false;
+  String _currentMonthYear = '';
+  List<String> _availableMonths = [];
+  DateTime _currentViewDate = DateTime.now();
 
   @override
   void initState() {
@@ -23,15 +26,35 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
 
   void _saveRecords() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('records', jsonEncode(records));
+    prefs.setString('blood_sugar_records', jsonEncode(records));
+  }
+
+  void _updateAvailableMonths() {
+    final months = <String>{};
+    for (final record in records) {
+      final date = DateTime.parse(record['date']);
+      final monthYear = DateFormat('MMMM, yyyy').format(date);
+      months.add(monthYear);
+    }
+    setState(() {
+      _availableMonths = months.toList()..sort(_compareMonths);
+      if (_availableMonths.isNotEmpty && _currentMonthYear.isEmpty) {
+        _currentMonthYear = _availableMonths.first;
+      }
+    });
   }
 
   void _loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
-    String? savedData = prefs.getString('records');
+    String? savedData = prefs.getString('blood_sugar_records');
     if (savedData != null) {
       setState(() {
         records = List<Map<String, dynamic>>.from(jsonDecode(savedData));
+        for (var record in records) {
+          record['timestamp'] ??= DateTime.now().millisecondsSinceEpoch;
+        }
+        _updateAvailableMonths();
+        _saveRecords();
       });
     }
   }
@@ -73,15 +96,15 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
       surfaceTintColor: const Color.fromARGB(255, 245, 246, 248),
       borderOnForeground: true,
       semanticContainer: true,
-      color: _getStatusColor(record['status']).withAlpha((0.3 * 255).toInt()), 
+      color: Colors.white,
       margin: EdgeInsets.symmetric(vertical: 8),
-       child: Padding(
+      child: Padding(
         padding: EdgeInsets.all(12),
         child: Row(
           children: [
             CircleAvatar(
               backgroundColor: _getStatusColor(record['status']),
-              radius: 15, 
+              radius: 15,
             ),
             SizedBox(width: 12),
             Column(
@@ -94,10 +117,10 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                 SizedBox(height: 5),
                 Text(record['status']),
                 SizedBox(height: 5),
-                Text(record['date']),
+                Text(_formatDateTime(record['date'])),
               ],
             ),
-            Spacer(), 
+            Spacer(),
             _buildEllipsisMenu(index),
           ],
         ),
@@ -109,6 +132,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     setState(() {
       records.removeAt(index);
       _saveRecords();
+      _updateAvailableMonths();
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -140,20 +164,83 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     );
   }
 
+  bool _isEditingAllowed(int index) {
+    if (index >= records.length) return false;
+    final record = records[index];
+    final creationTime =
+        DateTime.fromMillisecondsSinceEpoch(record['timestamp'] ?? 0);
+    final currentTime = DateTime.now();
+    return currentTime.difference(creationTime).inMinutes <= 3;
+  }
+
+  String _formatDateTime(String isoString) {
+    final dateTime = DateTime.parse(isoString).toLocal();
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _shareRecord(int index) {
+    if (index >= records.length) return;
+
+    final record = records[index];
+    final dateTime = DateTime.parse(record['date']).toLocal();
+    final formattedDate =
+        '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+
+    final shareText = '''
+      Blood Sugar Record:
+      - Blood sugar: ${record['value']} mmol/L
+      - Status: ${record['status']}
+      - Date and Time: $formattedDate
+      ''';
+
+    Share.share(shareText);
+  }
+
   Widget _buildEllipsisMenu(int index) {
+    final canEdit = _isEditingAllowed(index);
+
     return PopupMenuButton<String>(
       onSelected: (value) {
-        if (value == 'edit') {
+        if (value == 'edit' && canEdit) {
           _showEditRecordDialog(index);
-        } else if (value == 'delete') {
+        } else if (value == 'delete' && canEdit) {
           _confirmDeleteRecord(index);
+        } else if (value == 'share') {
+          _shareRecord(index);
+        } else if (!canEdit) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text('Editing allowed only within 5 minutes of creation')),
+          );
         }
       },
       itemBuilder: (context) => [
         PopupMenuItem(
-            value: 'edit', enabled: true, height: 40, child: Text('Edit')),
+          value: 'share',
+          height: 40,
+          child: Text('Share'),
+        ),
         PopupMenuItem(
-            value: 'delete', enabled: true, height: 40, child: Text('Delete')),
+            value: 'edit',
+            enabled: canEdit,
+            height: 40,
+            child: Text(
+              'Edit',
+              style: TextStyle(
+                color: canEdit ? null : Colors.grey,
+              ),
+            )),
+        PopupMenuItem(
+            value: 'delete',
+            enabled: canEdit,
+            height: 40,
+            child: Text(
+              'Delete',
+              style: TextStyle(
+                color: canEdit ? null : Colors.grey,
+              ),
+            )),
       ],
     );
   }
@@ -241,9 +328,11 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                   records.insert(0, {
                     'value': value,
                     'status': status,
-                    'date': DateTime.now().toIso8601String().substring(0, 10),
+                    'date': DateTime.now().toLocal().toString(),
+                    'timestamp': DateTime.now().millisecondsSinceEpoch,
                   });
                   _saveRecords();
+                  _updateAvailableMonths();
                 });
                 Navigator.pop(context);
               } catch (e) {
@@ -260,7 +349,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     );
   }
 
-  Widget _buildBarChart() {
+  Widget _buildBarChart(List<Map<String, dynamic>> displayRecords) {
     return Container(
       height: 300,
       padding: EdgeInsets.all(10),
@@ -268,74 +357,81 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         color: Colors.blue[100],
         borderRadius: BorderRadius.circular(12),
       ),
-      child: BarChart(
-        BarChartData(
-          barTouchData:
-              BarTouchData(enabled: true, allowTouchBarBackDraw: true),
-          baselineY: 0,
-          alignment: BarChartAlignment.spaceAround,
-          titlesData: FlTitlesData(
-              show: true,
-              leftTitles: AxisTitles(
-                axisNameWidget: const Text("Blood sugar (mmol/L)"),
-                axisNameSize: 30,
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  interval: 5,
-                  maxIncluded: true,
-                  minIncluded: true,
-                  getTitlesWidget: (value, meta) =>
-                      Text(value.toInt().toString()),
-                ),
+      child: displayRecords.isEmpty
+          ? Center(
+              child: Text(
+                'No data available for ${DateFormat('MMMM, yyyy').format(_currentViewDate)}',
+                style: TextStyle(fontSize: 16),
               ),
-              rightTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                showTitles: false,
-                maxIncluded: true,
-                minIncluded: true,
-              )),
-              topTitles: AxisTitles(
-                  axisNameWidget: const Text("Blood Sugar Graph"),
-                  axisNameSize: 35,
-                  sideTitles: SideTitles(
-                    showTitles: false,
-                    getTitlesWidget: (value, meta) => Text("Blood sugar Graph"),
-                  )),
-              bottomTitles: AxisTitles(
-                  axisNameWidget: const Text("Number of records"),
-                  axisNameSize: 25,
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 30,
-                    getTitlesWidget: (value, meta) {
-                     return Text((value + 1).toInt().toString());
-                    }
-                  ))),
-          borderData: FlBorderData(show: true),
-          barGroups: records.asMap().entries.map((entry) {
-            return BarChartGroupData(
-              x: entry.key,
-              barRods: [
-                BarChartRodData(
-                  toY: entry.value['value'],
-                  color: _getStatusColor(entry.value['status']),
-                  width: 18,
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: BorderSide(
-                      strokeAlign: BorderSide.strokeAlignCenter,
-                      width: BorderSide.strokeAlignOutside,
-                      color: Colors.black),
-                  backDrawRodData: BackgroundBarChartRodData(
-                    show: false,
-                    toY: 10,
-                    color: Colors.grey[300],
-                  ),
-                ),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
+            )
+          : BarChart(
+              BarChartData(
+                barTouchData:
+                    BarTouchData(enabled: true, allowTouchBarBackDraw: true),
+                baselineY: 0,
+                alignment: BarChartAlignment.spaceAround,
+                titlesData: FlTitlesData(
+                    show: true,
+                    leftTitles: AxisTitles(
+                      axisNameWidget: const Text("Blood sugar (mmol/L)"),
+                      axisNameSize: 30,
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 5,
+                        maxIncluded: true,
+                        minIncluded: true,
+                        getTitlesWidget: (value, meta) =>
+                            Text(value.toInt().toString()),
+                      ),
+                    ),
+                    rightTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                      showTitles: false,
+                      maxIncluded: true,
+                      minIncluded: true,
+                    )),
+                    topTitles: AxisTitles(
+                        axisNameWidget: const Text("Blood Sugar Graph"),
+                        axisNameSize: 35,
+                        sideTitles: SideTitles(
+                          showTitles: false,
+                          getTitlesWidget: (value, meta) =>
+                              Text("Blood sugar Graph"),
+                        )),
+                    bottomTitles: AxisTitles(
+                        axisNameWidget: const Text("Number of records"),
+                        axisNameSize: 25,
+                        sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 30,
+                            getTitlesWidget: (value, meta) {
+                              return Text((value + 1).toInt().toString());
+                            }))),
+                borderData: FlBorderData(show: true),
+                barGroups: displayRecords.asMap().entries.map((entry) {
+                  return BarChartGroupData(
+                    x: entry.key,
+                    barRods: [
+                      BarChartRodData(
+                        toY: entry.value['value'],
+                        color: _getStatusColor(entry.value['status']),
+                        width: 18,
+                        borderRadius: BorderRadius.circular(5),
+                        borderSide: BorderSide(
+                            strokeAlign: BorderSide.strokeAlignCenter,
+                            width: BorderSide.strokeAlignOutside,
+                            color: Colors.black),
+                        backDrawRodData: BackgroundBarChartRodData(
+                          show: false,
+                          toY: 10,
+                          color: Colors.grey[300],
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
     );
   }
 
@@ -346,14 +442,82 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     return _buildRecordCard(records[0], 0);
   }
 
+  int _compareMonths(String a, String b) {
+    final dateA = DateFormat('MMMM, yyyy').parse(a);
+    final dateB = DateFormat('MMMM, yyyy').parse(b);
+    return dateB.compareTo(dateA);
+  }
+
+  void _navigateMonth(int direction) {
+    setState(() {
+      if (direction == -1) {
+        // Previous month
+        _currentViewDate =
+            DateTime(_currentViewDate.year, _currentViewDate.month - 1);
+      } else {
+        // Next month
+        _currentViewDate =
+            DateTime(_currentViewDate.year, _currentViewDate.month + 1);
+      }
+    });
+  }
+
+  List<Map<String, dynamic>> _getRecordsForCurrentMonth() {
+    return records.where((record) {
+      final date = DateTime.parse(record['date']);
+      return date.month == _currentViewDate.month &&
+          date.year == _currentViewDate.year;
+    }).toList();
+  }
+
+  Widget _buildMonthNavigationHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: Icon(Icons.chevron_left),
+            onPressed: () => _navigateMonth(-1),
+          ),
+          Text(
+            DateFormat('MMMM, yyyy').format(_currentViewDate),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          IconButton(
+            icon: Icon(Icons.chevron_right),
+            onPressed: () => _navigateMonth(1),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPreviousRecordsList() {
+    final currentMonthRecords = _getRecordsForCurrentMonth();
+
+    if (currentMonthRecords.isEmpty) {
+      return Expanded(
+        child: Center(
+          child: Text(
+            'No records available for ${DateFormat('MMMM, yyyy').format(_currentViewDate)}',
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
+      );
+    }
+
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: ListView.builder(
-          itemCount: records.length > 1 ? records.length - 1 : 0,
+          itemCount: currentMonthRecords.length,
           itemBuilder: (context, index) {
-            return _buildRecordCard(records[index + 1], index + 1);
+            // Find the original index in the main records list
+            final originalIndex = records.indexWhere((r) =>
+                r['date'] == currentMonthRecords[index]['date'] &&
+                r['value'] == currentMonthRecords[index]['value']);
+            return _buildRecordCard(currentMonthRecords[index], originalIndex);
           },
         ),
       ),
@@ -362,17 +526,10 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentMonthRecords = _getRecordsForCurrentMonth();
+
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => HomeScreen()),
-            );
-          },
-        ),
         title: Text('Blood Sugar', style: TextStyle(color: Colors.blue)),
         backgroundColor: Colors.white,
         centerTitle: true,
@@ -387,9 +544,15 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                _buildBarChart(),
+                _buildMonthNavigationHeader(),
+                _buildBarChart(currentMonthRecords),
                 SizedBox(height: 10),
-                _buildLatestRecordCard(),
+                // if (records.isNotEmpty &&
+                //     DateTime.parse(records[0]['date']).month ==
+                //         _currentViewDate.month &&
+                //     DateTime.parse(records[0]['date']).year ==
+                //         _currentViewDate.year)
+                // _buildLatestRecordCard(),
               ],
             ),
           ),
