@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/records/health_insights/health_insights.dart';
+import 'package:umoyocard/screens/records/health_insights/insights_prediction.dart';
 import 'package:umoyocard/screens/records/medica_history/medical_history.dart';
 import 'package:umoyocard/screens/records/shared_data_record.dart';
 import 'timeline_screen.dart';
@@ -49,9 +50,9 @@ class RecordScreen extends StatelessWidget {
                         ),
                         _buildRecordCard(
                           context,
-                          'Health Insights',
+                          'Health Insights & Predicitive Analytics',
                           Icons.insights,
-                          const HealthInsightsScreen(),
+                          InsightsPredictionsScreen(),
                         ),
                       ],
                     ),
@@ -67,7 +68,7 @@ class RecordScreen extends StatelessWidget {
                         ),
                         _buildRecordCard(
                           context,
-                          'Shared Data',
+                          'Shared Data Log',
                           Icons.share,
                           SharedDataRecordScreen(),
                         ),
