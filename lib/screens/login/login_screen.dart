@@ -74,7 +74,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16.0),
-// 👇👇 Password Field with Eye Icon
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -97,7 +96,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 10.0),
               TextButton(
                 onPressed: () {
