@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:umoyocard/screens/profile/profile_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_pressure_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
@@ -38,10 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: _selectedIndex == 0
           ? AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.blue),
         title: const Text(
           'Home',
           style: TextStyle(
@@ -52,9 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       )
           : null,
+      drawer: _buildDrawer(context),
       body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.category), label: 'Records'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
@@ -62,6 +65,48 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue,
         onTap: _onItemTapped,
+      ),
+    );
+  }
+
+  Drawer _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(color: Colors.blue),
+            child: const Text(
+              'UmoyoCard Menu',
+              style: TextStyle(color: Colors.white, fontSize: 24),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.analytics),
+            title: const Text('Analytics Dashboard'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/analytics_dashboard');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.feedback),
+            title: const Text('User Feedback'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/feedback');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Logout'),
+            onTap: () async {
+              Navigator.pop(context);
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+          ),
+        ],
       ),
     );
   }
@@ -81,9 +126,7 @@ class _HomeContentState extends State<HomeContent> {
   void initState() {
     super.initState();
     final user = FirebaseAuth.instance.currentUser;
-    setState(() {
-      _displayName = user?.displayName ?? 'there';
-    });
+    _displayName = user?.displayName ?? 'there';
   }
 
   @override
@@ -164,7 +207,8 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  Widget _buildQuickLinkCard(BuildContext context, String title, IconData icon, VoidCallback onTap) {
+  Widget _buildQuickLinkCard(
+      BuildContext context, String title, IconData icon, VoidCallback onTap) {
     if (title == 'Recent Timeline') {
       return Expanded(child: RecentTimelineCard(onTap: onTap));
     }
@@ -197,17 +241,17 @@ class _HomeContentState extends State<HomeContent> {
 
   void _handleQuickLinkTap(BuildContext context, String label) {
     if (label == 'Scan Health Passport') {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => OCRScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => OCRScreen()));
     } else if (label == 'Scan QR Code') {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => BarcodeScannerScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => BarcodeScannerScreen()));
     } else if (label == 'Recent Timeline') {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => TimelineScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => TimelineScreen()));
     } else if (label == 'Blood Pressure') {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => BloodPressureScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => BloodPressureScreen()));
     } else if (label == 'Body Weight') {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => WeightTrackingScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackingScreen()));
     } else if (label == 'Blood Sugar') {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => BloodSugarScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => BloodSugarScreen()));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Feature for "$label" is not implemented yet.')),
@@ -232,14 +276,12 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
   void initState() {
     super.initState();
     _fetchLatestText();
-    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      _fetchLatestText();
-    });
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _fetchLatestText());
   }
 
   Future<void> _fetchLatestText() async {
     final prefs = await SharedPreferences.getInstance();
-    final List<String> texts = prefs.getStringList('savedTexts') ?? [];
+    final texts = prefs.getStringList('savedTexts') ?? [];
     setState(() {
       _latestText = texts.isNotEmpty ? texts.last : 'No recent record';
     });
