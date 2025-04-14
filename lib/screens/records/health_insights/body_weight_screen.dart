@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:umoyocard/screens/home/home_screen.dart';
 
 class WeightRecord {
   double weight;
@@ -61,38 +60,73 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
   }
 
   void addOrEditRecord({int? index}) {
-    double weightValue = index != null ? records[index].weight : 70.0;
+    double weightValue = index != null ? records[index].weight : 00.0;
+    final TextEditingController controller =
+    TextEditingController(text: weightValue.toString());
+    String? errorText;
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(index == null ? "Add Weight Record" : "Edit Weight Record"),
-          content: TextField(
-            decoration: InputDecoration(labelText: "Weight (KG)"),
-            keyboardType: TextInputType.number,
-            onChanged: (value) => weightValue = double.tryParse(value) ?? weightValue,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  if (index == null) {
-                    records.insert(0, WeightRecord(weight: weightValue, date: DateTime.now()));
-                  } else {
-                    records[index] = WeightRecord(weight: weightValue, date: DateTime.now());
-                  }
-                  _saveRecords();
-                });
-                Navigator.pop(context);
-              },
-              child: Text(index == null ? "Add" : "Save"),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title:
+              Text(index == null ? "Add Weight Record" : "Edit Weight Record"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      labelText: "Weight (KG)",
+                      errorText: errorText,
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      double? input = double.tryParse(value);
+                      setState(() {
+                        if (input == null) {
+                          errorText = "Please enter a valid number.";
+                        } else if (input > 635) {
+                          errorText = "Weight exceeds maximum human limit (635 KG).";
+                        } else {
+                          errorText = null;
+                          weightValue = input;
+                        }
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (errorText == null) {
+                      setState(() {
+                        if (index == null) {
+                          records.insert(
+                              0,
+                              WeightRecord(
+                                  weight: weightValue, date: DateTime.now()));
+                        } else {
+                          records[index] = WeightRecord(
+                              weight: weightValue, date: DateTime.now());
+                        }
+                        _saveRecords();
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Text(index == null ? "Add" : "Save"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -147,7 +181,9 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
               ),
               child: Column(
                 children: [
-                  Text("Weight Progress", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("Weight Progress",
+                      style:
+                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   SizedBox(height: 12),
                   Container(
                     height: 200,
@@ -156,16 +192,18 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                         borderData: FlBorderData(show: true),
                         gridData: FlGridData(show: true),
                         titlesData: FlTitlesData(
-                          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          rightTitles:
+                          AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          topTitles:
+                          AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         ),
                         lineBarsData: [
                           LineChartBarData(
                             spots: records
                                 .asMap()
                                 .entries
-                                .map((entry) => FlSpot(
-                                entry.key.toDouble(), entry.value.weight))
+                                .map((entry) => FlSpot(entry.key.toDouble(),
+                                entry.value.weight))
                                 .toList(),
                             isCurved: true,
                             color: Colors.blue,
@@ -189,7 +227,8 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
                       margin: EdgeInsets.symmetric(vertical: 8),
                       child: ListTile(
                         title: Text("${record.weight} KG"),
-                        subtitle: Text("${record.date.day}-${record.date.month}-${record.date.year}"),
+                        subtitle: Text(
+                            "${record.date.day}-${record.date.month}-${record.date.year}"),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
