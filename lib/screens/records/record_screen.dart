@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:umoyocard/screens/profile/profile_header.dart';
 import 'package:umoyocard/screens/records/health_insights/health_insights.dart';
 import 'package:umoyocard/screens/records/health_insights/insights_prediction.dart';
 import 'package:umoyocard/screens/records/medica_history/medical_history.dart';
@@ -14,16 +15,20 @@ class RecordScreen extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.teal,
         elevation: 0,
         title: const Text(
           'Records',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.blueAccent,
+            color: Colors.white,
           ),
         ),
+        actions: const [
+          ProfileHeader(),
+          SizedBox(width: 10),
+        ],
       ),
       body: SafeArea(
         child: Column(
