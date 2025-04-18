@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:umoyocard/screens/records/health_insights/blood_pressure_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
+import 'package:umoyocard/screens/records/health_insights/insights_prediction.dart';
 
 class HealthInsightsScreen extends StatelessWidget {
   const HealthInsightsScreen({Key? key}) : super(key: key);
@@ -37,8 +39,11 @@ class HealthInsightsScreen extends StatelessWidget {
                   Expanded(
                     child: Row(
                       children: [
-                        _buildRecordCard(context, 'Blood Pressure',
-                            Icons.favorite, BloodSugarScreen()),
+                        _buildRecordCard(
+                            context,
+                            'Health Insights and Predictive analytics',
+                            Icons.favorite,
+                            InsightsPredictionsScreen()),
                       ],
                     ),
                   ),
@@ -49,7 +54,7 @@ class HealthInsightsScreen extends StatelessWidget {
                           context,
                           'Blood Sugar',
                           Icons.medical_services,
-                          Container(),
+                          BloodSugarScreen(),
                         ),
                       ],
                     ),

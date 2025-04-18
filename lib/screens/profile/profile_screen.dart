@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/login/login_screen.dart';
+import 'package:umoyocard/screens/profile/change_password.dart';
+import 'package:umoyocard/screens/profile/personal_information.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -10,14 +12,14 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.teal,
         elevation: 0,
         title: const Text(
           'Profile',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.blueAccent,
+            color: Colors.white,
           ),
         ),
       ),
@@ -43,8 +45,21 @@ class ProfileScreen extends StatelessWidget {
 
             // Account & Settings Section
             _buildSectionTitle('Settings'),
-            _buildListTile('Update Personal Information', Icons.person, () {}),
-            _buildListTile('Change Password', Icons.lock, () {}),
+            _buildListTile('Update Personal Information', Icons.person, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const UpdatePersonalInfoScreen()),
+              );
+            }),
+
+            _buildListTile('Change Password', Icons.lock, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ChangePasswordScreen()),
+              );
+            }),
 
             // Language Section
             _buildListTile('Language', Icons.language, () {}),
@@ -55,7 +70,7 @@ class ProfileScreen extends StatelessWidget {
             _buildListTile('Privacy Policy', Icons.privacy_tip, () {}),
             _buildListTile('Contact Us', Icons.contact_mail, () {}),
             _buildListTile('FAQ', Icons.help, () {}),
-            _buildListTile('About UmoyoKhadi', Icons.info, () {}),
+            _buildListTile('About UmoyoCard', Icons.info, () {}),
 
             const SizedBox(height: 16.0),
 

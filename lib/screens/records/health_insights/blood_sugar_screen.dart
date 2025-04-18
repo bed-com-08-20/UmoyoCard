@@ -357,81 +357,81 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         color: Colors.blue[100],
         borderRadius: BorderRadius.circular(12),
       ),
-    child: displayRecords.isEmpty
-    ? Center(
-    child: Text(
-    'No data available for ${DateFormat('MMMM, yyyy').format(_currentViewDate)}',
-    style: TextStyle(fontSize: 16),
-    ),
-    )
-    : BarChart(
-        BarChartData(
-          barTouchData:
-              BarTouchData(enabled: true, allowTouchBarBackDraw: true),
-          baselineY: 0,
-          alignment: BarChartAlignment.spaceAround,
-          titlesData: FlTitlesData(
-              show: true,
-              leftTitles: AxisTitles(
-                axisNameWidget: const Text("Blood sugar (mmol/L)"),
-                axisNameSize: 30,
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  interval: 5,
-                  maxIncluded: true,
-                  minIncluded: true,
-                  getTitlesWidget: (value, meta) =>
-                      Text(value.toInt().toString()),
-                ),
+      child: displayRecords.isEmpty
+          ? Center(
+              child: Text(
+                'No data available for ${DateFormat('MMMM, yyyy').format(_currentViewDate)}',
+                style: TextStyle(fontSize: 16),
               ),
-              rightTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                showTitles: false,
-                maxIncluded: true,
-                minIncluded: true,
-              )),
-              topTitles: AxisTitles(
-                  axisNameWidget: const Text("Blood Sugar Graph"),
-                  axisNameSize: 35,
-                  sideTitles: SideTitles(
-                    showTitles: false,
-                    getTitlesWidget: (value, meta) =>
-                        Text("Blood sugar Graph"),
-                  )),
-              bottomTitles: AxisTitles(
-                  axisNameWidget: const Text("Number of records"),
-                  axisNameSize: 25,
-                  sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      getTitlesWidget: (value, meta) {
-                        return Text((value + 1).toInt().toString());
-                      }))),
-          borderData: FlBorderData(show: true),
-          barGroups: displayRecords.asMap().entries.map((entry) {
-            return BarChartGroupData(
-              x: entry.key,
-              barRods: [
-                BarChartRodData(
-                  toY: entry.value['value'],
-                  color: _getStatusColor(entry.value['status']),
-                  width: 18,
-                  borderRadius: BorderRadius.circular(5),
-                  borderSide: BorderSide(
-                      strokeAlign: BorderSide.strokeAlignCenter,
-                      width: BorderSide.strokeAlignOutside,
-                      color: Colors.black),
-                  backDrawRodData: BackgroundBarChartRodData(
-                    show: false,
-                    toY: 10,
-                    color: Colors.grey[300],
-                  ),
-                ),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
+            )
+          : BarChart(
+              BarChartData(
+                barTouchData:
+                    BarTouchData(enabled: true, allowTouchBarBackDraw: true),
+                baselineY: 0,
+                alignment: BarChartAlignment.spaceAround,
+                titlesData: FlTitlesData(
+                    show: true,
+                    leftTitles: AxisTitles(
+                      axisNameWidget: const Text("Blood sugar (mmol/L)"),
+                      axisNameSize: 30,
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 5,
+                        maxIncluded: true,
+                        minIncluded: true,
+                        getTitlesWidget: (value, meta) =>
+                            Text(value.toInt().toString()),
+                      ),
+                    ),
+                    rightTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                      showTitles: false,
+                      maxIncluded: true,
+                      minIncluded: true,
+                    )),
+                    topTitles: AxisTitles(
+                        axisNameWidget: const Text("Blood Sugar Graph"),
+                        axisNameSize: 35,
+                        sideTitles: SideTitles(
+                          showTitles: false,
+                          getTitlesWidget: (value, meta) =>
+                              Text("Blood sugar Graph"),
+                        )),
+                    bottomTitles: AxisTitles(
+                        axisNameWidget: const Text("Number of records"),
+                        axisNameSize: 25,
+                        sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 30,
+                            getTitlesWidget: (value, meta) {
+                              return Text((value + 1).toInt().toString());
+                            }))),
+                borderData: FlBorderData(show: true),
+                barGroups: displayRecords.asMap().entries.map((entry) {
+                  return BarChartGroupData(
+                    x: entry.key,
+                    barRods: [
+                      BarChartRodData(
+                        toY: entry.value['value'],
+                        color: _getStatusColor(entry.value['status']),
+                        width: 18,
+                        borderRadius: BorderRadius.circular(5),
+                        borderSide: BorderSide(
+                            strokeAlign: BorderSide.strokeAlignCenter,
+                            width: BorderSide.strokeAlignOutside,
+                            color: Colors.black),
+                        backDrawRodData: BackgroundBarChartRodData(
+                          show: false,
+                          toY: 10,
+                          color: Colors.grey[300],
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
     );
   }
 
