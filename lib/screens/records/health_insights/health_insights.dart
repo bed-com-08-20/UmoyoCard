@@ -38,7 +38,7 @@ class HealthInsightsScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         _buildRecordCard(context, 'Blood Pressure',
-                            Icons.favorite, const BloodSugarScreen()),
+                            Icons.favorite, BloodSugarScreen()),
                       ],
                     ),
                   ),

@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:umoyocard/screens/home/home_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 
 class BloodSugarScreen extends StatefulWidget {
-  const BloodSugarScreen({super.key});
+  BloodSugarScreen({super.key});
 
   @override
   _BloodSugarScreenState createState() => _BloodSugarScreenState();
@@ -15,9 +14,9 @@ class BloodSugarScreen extends StatefulWidget {
 
 class _BloodSugarScreenState extends State<BloodSugarScreen> {
   List<Map<String, dynamic>> records = []; // Start with no records
-  bool showAllRecords = false;
-  String _selectedMonth = '';
+  String _currentMonthYear = '';
   List<String> _availableMonths = [];
+  DateTime _currentViewDate = DateTime.now();
 
   @override
   void initState() {
@@ -27,27 +26,27 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
 
   void _saveRecords() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('records', jsonEncode(records));
+    prefs.setString('blood_sugar_records', jsonEncode(records));
   }
 
   void _updateAvailableMonths() {
     final months = <String>{};
     for (final record in records) {
       final date = DateTime.parse(record['date']);
-      final monthYear = DateFormat('MMMM yyyy').format(date);
+      final monthYear = DateFormat('MMMM, yyyy').format(date);
       months.add(monthYear);
     }
     setState(() {
       _availableMonths = months.toList()..sort(_compareMonths);
-      if (_availableMonths.isNotEmpty && _selectedMonth.isEmpty) {
-        _selectedMonth = _availableMonths.first;
+      if (_availableMonths.isNotEmpty && _currentMonthYear.isEmpty) {
+        _currentMonthYear = _availableMonths.first;
       }
     });
   }
 
   void _loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
-    String? savedData = prefs.getString('records');
+    String? savedData = prefs.getString('blood_sugar_records');
     if (savedData != null) {
       setState(() {
         records = List<Map<String, dynamic>>.from(jsonDecode(savedData));
@@ -133,6 +132,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     setState(() {
       records.removeAt(index);
       _saveRecords();
+      _updateAvailableMonths();
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -332,6 +332,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                     'timestamp': DateTime.now().millisecondsSinceEpoch,
                   });
                   _saveRecords();
+                  _updateAvailableMonths();
                 });
                 Navigator.pop(context);
               } catch (e) {
@@ -348,7 +349,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     );
   }
 
-  Widget _buildBarChart() {
+  Widget _buildBarChart(List<Map<String, dynamic>> displayRecords) {
     return Container(
       height: 300,
       padding: EdgeInsets.all(10),
@@ -356,7 +357,14 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         color: Colors.blue[100],
         borderRadius: BorderRadius.circular(12),
       ),
-      child: BarChart(
+    child: displayRecords.isEmpty
+    ? Center(
+    child: Text(
+    'No data available for ${DateFormat('MMMM, yyyy').format(_currentViewDate)}',
+    style: TextStyle(fontSize: 16),
+    ),
+    )
+    : BarChart(
         BarChartData(
           barTouchData:
               BarTouchData(enabled: true, allowTouchBarBackDraw: true),
@@ -387,7 +395,8 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                   axisNameSize: 35,
                   sideTitles: SideTitles(
                     showTitles: false,
-                    getTitlesWidget: (value, meta) => Text("Blood sugar Graph"),
+                    getTitlesWidget: (value, meta) =>
+                        Text("Blood sugar Graph"),
                   )),
               bottomTitles: AxisTitles(
                   axisNameWidget: const Text("Number of records"),
@@ -399,7 +408,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                         return Text((value + 1).toInt().toString());
                       }))),
           borderData: FlBorderData(show: true),
-          barGroups: records.asMap().entries.map((entry) {
+          barGroups: displayRecords.asMap().entries.map((entry) {
             return BarChartGroupData(
               x: entry.key,
               barRods: [
@@ -434,59 +443,81 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
   }
 
   int _compareMonths(String a, String b) {
-    final dateA = DateFormat('MMMM yyyy').parse(a);
-    final dateB = DateFormat('MMMM yyyy').parse(b);
+    final dateA = DateFormat('MMMM, yyyy').parse(a);
+    final dateB = DateFormat('MMMM, yyyy').parse(b);
     return dateB.compareTo(dateA);
   }
 
-  Widget _buildMonthSelector() {
-    if (_availableMonths.isEmpty) return SizedBox();
+  void _navigateMonth(int direction) {
+    setState(() {
+      if (direction == -1) {
+        // Previous month
+        _currentViewDate =
+            DateTime(_currentViewDate.year, _currentViewDate.month - 1);
+      } else {
+        // Next month
+        _currentViewDate =
+            DateTime(_currentViewDate.year, _currentViewDate.month + 1);
+      }
+    });
+  }
 
+  List<Map<String, dynamic>> _getRecordsForCurrentMonth() {
+    return records.where((record) {
+      final date = DateTime.parse(record['date']);
+      return date.month == _currentViewDate.month &&
+          date.year == _currentViewDate.year;
+    }).toList();
+  }
+
+  Widget _buildMonthNavigationHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.blue),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: DropdownButton<String>(
-          value: _selectedMonth,
-          isExpanded: true,
-          underline: SizedBox(),
-          items: _availableMonths.map((month) {
-            return DropdownMenuItem(
-              value: month,
-              child: Text(
-                month,
-                style: TextStyle(fontSize: 16),
-              ),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedMonth = value!;
-            });
-          },
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: Icon(Icons.chevron_left),
+            onPressed: () => _navigateMonth(-1),
+          ),
+          Text(
+            DateFormat('MMMM, yyyy').format(_currentViewDate),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          IconButton(
+            icon: Icon(Icons.chevron_right),
+            onPressed: () => _navigateMonth(1),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildPreviousRecordsList() {
-    final filteredRecords = records.where((record) {
-      if (_selectedMonth.isEmpty) return true;
-      final date = DateTime.parse(record['date']);
-      return '${date.month}/${date.year}' == _selectedMonth;
-    }).toList();
+    final currentMonthRecords = _getRecordsForCurrentMonth();
+
+    if (currentMonthRecords.isEmpty) {
+      return Expanded(
+        child: Center(
+          child: Text(
+            'No records available for ${DateFormat('MMMM, yyyy').format(_currentViewDate)}',
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
+      );
+    }
 
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: ListView.builder(
-          itemCount: filteredRecords.length > 1 ? records.length - 1 : 0,
+          itemCount: currentMonthRecords.length,
           itemBuilder: (context, index) {
-            return _buildRecordCard(filteredRecords[index + 1], index + 1);
+            // Find the original index in the main records list
+            final originalIndex = records.indexWhere((r) =>
+                r['date'] == currentMonthRecords[index]['date'] &&
+                r['value'] == currentMonthRecords[index]['value']);
+            return _buildRecordCard(currentMonthRecords[index], originalIndex);
           },
         ),
       ),
@@ -495,17 +526,10 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentMonthRecords = _getRecordsForCurrentMonth();
+
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => HomeScreen()),
-            );
-          },
-        ),
         title: Text('Blood Sugar', style: TextStyle(color: Colors.blue)),
         backgroundColor: Colors.white,
         centerTitle: true,
@@ -520,10 +544,15 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                _buildMonthSelector(),
-                _buildBarChart(),
+                _buildMonthNavigationHeader(),
+                _buildBarChart(currentMonthRecords),
                 SizedBox(height: 10),
-                _buildLatestRecordCard(),
+                // if (records.isNotEmpty &&
+                //     DateTime.parse(records[0]['date']).month ==
+                //         _currentViewDate.month &&
+                //     DateTime.parse(records[0]['date']).year ==
+                //         _currentViewDate.year)
+                // _buildLatestRecordCard(),
               ],
             ),
           ),
