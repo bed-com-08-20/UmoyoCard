@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:umoyocard/screens/records/health_insights/blood_pressure_screen.dart';
+import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
 
 class InsightsPredictionsScreen extends StatelessWidget {
   const InsightsPredictionsScreen({Key? key}) : super(key: key);
@@ -8,42 +10,67 @@ class InsightsPredictionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Insights & Predictions'),
-        backgroundColor: Colors.teal,
+        title: const Text(
+          'Insights & Predictions',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.blueAccent,
+          ),
+        ),
+        backgroundColor: Colors.white,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildHealthCard(
+            context,
             title: '🩸 Blood Pressure',
             chart: _buildLineChart(),
             prediction: 'Moderate risk of hypertension',
             tip: 'Reduce salt intake and monitor daily',
+            destination: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => BloodPressureScreen()),
+            ),
           ),
           const SizedBox(height: 16),
           _buildHealthCard(
+            context,
             title: '🍬 Blood Sugar',
             chart: _buildAreaChart(),
             prediction: 'Likely sugar spike in next 3 days',
             tip: 'Balance meals with protein and fiber',
+            destination: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => BloodSugarScreen()),
+            ),
           ),
           const SizedBox(height: 16),
           _buildHealthCard(
+            context,
             title: '⚖️ Weight',
             chart: _buildBarChart(),
             prediction: 'Stable weight — good progress!',
             tip: 'Maintain diet and light exercise',
+            destination: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Screen is under development')),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHealthCard({
+  Widget _buildHealthCard(
+    BuildContext context, {
     required String title,
     required Widget chart,
     required String prediction,
     required String tip,
+    required VoidCallback destination,
   }) {
     return Card(
       elevation: 4,
@@ -63,6 +90,22 @@ class InsightsPredictionsScreen extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             Text('Tip: $tip'),
+            const SizedBox(height: 12),
+            Center(
+              child: ElevatedButton(
+                onPressed: destination,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text(
+                  'View Details',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
           ],
         ),
       ),

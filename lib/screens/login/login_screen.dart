@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/login/create_account.dart';
-//import 'create_password_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,7 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  void handleLogin() {
+  void handleLogin() async {
     String nationalId = _nationalIdController.text;
     String password = _passwordController.text;
 
@@ -27,6 +27,18 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (password.isNotEmpty) {
+      // Store login times
+      final prefs = await SharedPreferences.getInstance();
+      final currentLogin = DateTime.now().toString();
+      final previousLogin =
+          prefs.getString('lastLogin'); // Get the current last login
+
+      // Store current as lastLogin and previous as previousLogin
+      await prefs.setString('lastLogin', currentLogin);
+      if (previousLogin != null) {
+        await prefs.setString('previousLogin', previousLogin);
+      }
+
       // Navigate to LoadingScreen first
       Navigator.pushReplacementNamed(context, '/loading');
     } else {
