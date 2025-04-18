@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class OCRScreen extends StatefulWidget {
   const OCRScreen({super.key});
+
   @override
   State<OCRScreen> createState() => _OCRScreenState();
 }
@@ -16,7 +17,19 @@ class _OCRScreenState extends State<OCRScreen> {
   File? _imageFile;
   bool _isProcessing = false;
 
-  // Save record to SharedPreferences (the timeline storage)
+  final String _geminiApiKey = 'AIzaSyBjG13H2bbGtrQw_rHUyqRr82MS_6kp-A8';
+  late final GenerativeModel _geminiModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _geminiModel = GenerativeModel(
+      model: 'gemini-1.5-pro-latest',
+      apiKey: _geminiApiKey,
+    );
+  }
+
+  // Save record to SharedPreferences
   Future<void> _saveRecord() async {
     if (_extractedText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -26,8 +39,6 @@ class _OCRScreenState extends State<OCRScreen> {
     }
 
     final prefs = await SharedPreferences.getInstance();
-
-    // Get existing lists or initialize if null
     List<String> savedTexts = prefs.getStringList('savedTexts') ?? [];
     List<String> savedImages = prefs.getStringList('savedImages') ?? [];
 
@@ -47,6 +58,7 @@ class _OCRScreenState extends State<OCRScreen> {
       _extractedText = '';
       _imageFile = null;
     });
+
     Navigator.of(context).pop();
   }
 
@@ -63,6 +75,7 @@ class _OCRScreenState extends State<OCRScreen> {
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: source);
+
     if (pickedFile != null) {
       File imageFile = File(pickedFile.path);
       String savedPath = await saveImageLocally(imageFile);
@@ -70,40 +83,65 @@ class _OCRScreenState extends State<OCRScreen> {
         _imageFile = File(savedPath);
         _isProcessing = true;
       });
+
       await _processOCR(_imageFile!);
+
       setState(() {
         _isProcessing = false;
       });
     }
   }
 
-  // Process OCR using Google ML Kit - returns raw text
+  // Use Gemini API to process OCR and enhance text
   Future<void> _processOCR(File imageFile) async {
     try {
-      final inputImage = InputImage.fromFile(imageFile);
-      final textRecognizer =
-          TextRecognizer(script: TextRecognitionScript.latin);
-      final RecognizedText recognizedText =
-          await textRecognizer.processImage(inputImage);
+      final imageBytes = await imageFile.readAsBytes();
+
+      final prompt = '''
+You are a skilled medical assistant. Carefully extract and correct all relevant medical information from the image of a health passport page. The page may contain handwritten or printed notes.
+Guidelines: Please follow these guidelines carefully
+- If a section is not present in the image, skip it.
+- Focus on **extracting exactly what is written**, but make corrections to spelling, grammar, or formatting for clarity.
+- **Do not guess or hallucinate information**; only extract what can be identified.
+- Present the result in a clean, readable, and structured format using labeled sections or bullet points.
+- Do NOT use Markdown (e.g., **bold** or `code` style).
+- The structure should make sense to a healthcare worker or patient reading it.
+- **Do NOT include explanations, summaries, or irrelevant details**—only the cleaned and structured medical data.
+
+Always ensure the information is medically accurate and properly formatted for clarity and future digital record-keeping.
+
+Identify and organize the following fields if they are present:
+
+1. Date(s) — Format as dd/mm/yy
+2. Medical Condition(s) or Diagnosis
+3. Medication Name(s)
+4. Dosage and Frequency
+5. Administration Instructions
+6. Doctor or Hospital Name
+7. Patient Information (Name, Age, etc.)
+8. Signs, symptoms, or Observations
+''';
+
+      final content = Content(
+        'user',
+        [
+          DataPart('image/jpeg', imageBytes),
+          TextPart(prompt),
+        ],
+      );
+
+      final response = await _geminiModel.generateContent([content]);
 
       setState(() {
-        _extractedText = recognizedText.text;
+        _extractedText = response.text ?? "No text extracted or recognized.";
       });
-      debugPrint("Full OCR Text: $_extractedText");
-
-      textRecognizer.close();
     } catch (e) {
-      debugPrint("OCR Processing Error: $e");
+      debugPrint("Gemini OCR Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Failed to process image. Please try again.')),
       );
     }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   @override
@@ -189,7 +227,7 @@ class _OCRScreenState extends State<OCRScreen> {
                     backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: const Text("Save Record"),
+                  child: const Text('Save Record'),
                 ),
               ],
             ],
