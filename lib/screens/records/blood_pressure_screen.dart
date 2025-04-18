@@ -298,6 +298,65 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
       ),
       body: Column(
         children: [
+          //changes
+          SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Card(
+             elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                 child: Row(
+                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                     Expanded(
+                     child: DropdownButton<int>(
+                      isExpanded: true,
+                    value: selectedMonth,
+                     hint: Text('Month'),
+                        items: List.generate(12, (index) => index + 1).map((int month) {
+                      return DropdownMenuItem<int>(
+                       value: month,
+                     child: Text(monthNames[month - 1]),
+                           );
+                        }).toList(),
+                     onChanged: (int? newValue) {
+                    setState(() {
+                   selectedMonth = newValue;
+                  _filterRecords();
+                });
+              },
+            ),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: DropdownButton<int>(
+              isExpanded: true,
+              value: selectedYear,
+              hint: Text('Year'),
+              items: years.map((int year) {
+                return DropdownMenuItem<int>(
+                  value: year,
+                  child: Text(year.toString()),
+                     );
+                  }).toList(),
+              onChanged: (int? newValue) {
+                setState(() {
+                  selectedYear = newValue;
+                  selectedMonth = null;
+                  _filterRecords();
+                            });
+                          },
+                         ),
+                       ),
+                     ],
+                    ),
+                  ),
+                 ),
+             ),
+           SizedBox(height: 12),   
+          //changes end
           Container(
             constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
             padding: EdgeInsets.all(16),
@@ -311,47 +370,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text("Blood Pressure Overview", 
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                   DropdownButton<int>(
-                      value: selectedMonth,
-                      hint: Text('Month'),
-                      items: List.generate(12, (index) => index + 1).map((int month) {
-                        return DropdownMenuItem<int>(
-                          value: month,
-                          child: Text(monthNames[month - 1]),
-                        );
-                      }).toList(),
-                      onChanged: (int? newValue) {
-                        setState(() {
-                          selectedMonth = newValue;
-                          _filterRecords();
-                          });
-                        },
-                      ),
-                      
-                    DropdownButton<int>(
-                      value: selectedYear,
-                      hint: Text('Year'),
-                      items: years.map((int year) {
-                        return DropdownMenuItem<int>(
-                          value: year,
-                          child: Text(year.toString()),
-                        );
-                      }).toList(),
-                      onChanged: (int? newValue) {
-                        setState(() {
-                          selectedYear = newValue;
-                          selectedMonth = null;
-                          _filterRecords();
-                        });
-                      },
-                      ),
-                  ],
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 SizedBox(height: 12),
                 // ignore: sized_box_for_whitespace
                 Container(
@@ -403,7 +422,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
               ),
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 12),
           if (filteredRecords.isNotEmpty)
             Container(
               constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.2),
