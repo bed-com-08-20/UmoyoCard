@@ -1,18 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:umoyocard/screens/login/login_screen.dart';
 import 'package:umoyocard/screens/profile/change_password.dart';
 import 'package:umoyocard/screens/profile/personal_information.dart';
 
-
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  User? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = FirebaseAuth.instance.currentUser;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final String displayName = _user?.displayName ?? 'Unknown User';
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -31,14 +45,14 @@ class ProfileScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Profile Image and Name Section
-            CircleAvatar(
+            const CircleAvatar(
               radius: 50,
               backgroundImage: AssetImage('assets/profile_image.png'),
             ),
             const SizedBox(height: 8.0),
-            const Text(
-              'Harry Yamikani Peter',
-              style: TextStyle(
+            Text(
+              displayName,
+              style: const TextStyle(
                 fontSize: 18.0,
                 fontWeight: FontWeight.bold,
               ),
@@ -64,10 +78,8 @@ class ProfileScreen extends StatelessWidget {
               );
             }),
 
-            // Language Section
             _buildListTile('Language', Icons.language, () {}),
 
-            // Help Section
             _buildSectionTitle('Need Help'),
             _buildListTile('Terms of Use', Icons.article, () {}),
             _buildListTile('Privacy Policy', Icons.privacy_tip, () {}),
@@ -76,8 +88,6 @@ class ProfileScreen extends StatelessWidget {
             _buildListTile('About UmoyoKhadi', Icons.info, () {}),
 
             const SizedBox(height: 16.0),
-
-            // App Version
             const Align(
               alignment: Alignment.center,
               child: Text(
@@ -85,14 +95,12 @@ class ProfileScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey),
               ),
             ),
-
             const SizedBox(height: 16.0),
 
-            // Logout Button
             Center(
               child: TextButton(
                 onPressed: () {
-                  // Navigate to the login screen upon logout
+                  FirebaseAuth.instance.signOut(); // Optional: actually sign out
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
