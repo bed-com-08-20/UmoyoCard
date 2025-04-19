@@ -53,6 +53,7 @@ Treatment: ${treatmentController.text}
     });
 
     // Assume QR/barcode data is in JSON format
+
     try {
       Map<String, dynamic> data = _parseQRData(code);
       dateController.text = data['date'] ?? '';

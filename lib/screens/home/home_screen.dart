@@ -9,6 +9,7 @@ import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dar
 import 'package:umoyocard/screens/records/health_insights/body_weight_screen.dart';
 import 'package:umoyocard/screens/records/record_screen.dart';
 import 'package:umoyocard/screens/home/ocr_screen.dart';
+import 'package:umoyocard/screens/home/medication_schedule_screen.dart';
 import 'package:umoyocard/screens/home/qr_code_screen.dart';
 import 'package:umoyocard/screens/records/timeline_screen.dart';
 
@@ -74,9 +75,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(color: Colors.blue),
-            child: const Text(
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Colors.blue),
+            child: Text(
               'UmoyoCard Menu',
               style: TextStyle(color: Colors.white, fontSize: 24),
             ),
@@ -87,6 +88,17 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/analytics_dashboard');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.schedule),
+            title: const Text('Medication Schedule'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => MedicationScheduleScreen()),
+              );
             },
           ),
           ListTile(
@@ -103,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () async {
               Navigator.pop(context);
               await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacementNamed(context, '/login');
+              var pushReplacementNamed = Navigator.pushReplacementNamed(context, '/login');
             },
           ),
         ],
@@ -161,7 +173,7 @@ class _HomeContentState extends State<HomeContent> {
                         ),
                         _buildQuickLinkCard(
                           context,
-                          'Scan Barcode or QR Code',
+                          'Scan QR Code',
                           Icons.qr_code_scanner,
                               () => _handleQuickLinkTap(context, 'Scan QR Code'),
                         ),
@@ -207,8 +219,7 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
-  Widget _buildQuickLinkCard(
-      BuildContext context, String title, IconData icon, VoidCallback onTap) {
+  Widget _buildQuickLinkCard(BuildContext context, String title, IconData icon, VoidCallback onTap) {
     if (title == 'Recent Timeline') {
       return Expanded(child: RecentTimelineCard(onTap: onTap));
     }
@@ -240,22 +251,32 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   void _handleQuickLinkTap(BuildContext context, String label) {
-    if (label == 'Scan Health Passport') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => OCRScreen()));
-    } else if (label == 'Scan QR Code') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => BarcodeScannerScreen()));
-    } else if (label == 'Recent Timeline') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => TimelineScreen()));
-    } else if (label == 'Blood Pressure') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => BloodPressureScreen()));
-    } else if (label == 'Body Weight') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackingScreen()));
-    } else if (label == 'Blood Sugar') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => BloodSugarScreen()));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Feature for "$label" is not implemented yet.')),
-      );
+    switch (label) {
+      case 'Scan Health Passport':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => OCRScreen()));
+        break;
+      case 'Medication Schedule':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => MedicationScheduleScreen()));
+        break;
+      case 'Scan QR Code':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => BarcodeScannerScreen()));
+        break;
+      case 'Recent Timeline':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => TimelineScreen()));
+        break;
+      case 'Blood Pressure':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => BloodPressureScreen()));
+        break;
+      case 'Body Weight':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackingScreen()));
+        break;
+      case 'Blood Sugar':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => BloodSugarScreen()));
+        break;
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Feature for "$label" is not implemented yet.')),
+        );
     }
   }
 }
