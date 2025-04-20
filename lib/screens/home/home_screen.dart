@@ -1,14 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:umoyocard/screens/profile/profile_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_pressure_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
+import 'package:umoyocard/screens/records/health_insights/body_weight_screen.dart';
 import 'package:umoyocard/screens/records/record_screen.dart';
 import 'package:umoyocard/screens/home/ocr_screen.dart';
+import 'package:umoyocard/screens/home/medication_schedule_screen.dart';
+import 'package:umoyocard/screens/home/qr_code_screen.dart';
 import 'package:umoyocard/screens/records/timeline_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -17,9 +24,9 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _widgetOptions = <Widget>[
-    HomeContent(),
-    RecordScreen(),
-    ProfileScreen(),
+    const HomeContent(),
+    const RecordScreen(),
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -33,23 +40,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: _selectedIndex == 0
           ? AppBar(
-              automaticallyImplyLeading: false,
-              centerTitle: true,
-              backgroundColor: Colors.white,
-              elevation: 0,
-              title: Text(
-                'Home',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
-                ),
-              ),
-            )
+        automaticallyImplyLeading: true,
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.blue),
+        title: const Text(
+          'Home',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.blueAccent,
+          ),
+        ),
+      )
           : null,
+      drawer: _buildDrawer(context),
       body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.category), label: 'Records'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
@@ -60,27 +69,96 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  Drawer _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Colors.blue),
+            child: Text(
+              'UmoyoCard Menu',
+              style: TextStyle(color: Colors.white, fontSize: 24),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.analytics),
+            title: const Text('Analytics Dashboard'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/analytics_dashboard');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.schedule),
+            title: const Text('Medication Schedule'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => MedicationScheduleScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.feedback),
+            title: const Text('User Feedback'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/feedback');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Logout'),
+            onTap: () async {
+              Navigator.pop(context);
+              await FirebaseAuth.instance.signOut();
+              var pushReplacementNamed = Navigator.pushReplacementNamed(context, '/login');
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class HomeContent extends StatelessWidget {
+class HomeContent extends StatefulWidget {
+  const HomeContent({super.key});
+
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  String? _displayName;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = FirebaseAuth.instance.currentUser;
+    _displayName = user?.displayName ?? 'there';
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Hi Wadi Mkweza, welcome back!',
-              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+              'Hi $_displayName, welcome back!',
+              style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 16.0),
-            Text(
+            const SizedBox(height: 16.0),
+            const Text(
               'Quick Links',
               style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8.0),
+            const SizedBox(height: 8.0),
             Expanded(
               child: Column(
                 children: [
@@ -90,15 +168,20 @@ class HomeContent extends StatelessWidget {
                         _buildQuickLinkCard(
                           context,
                           'Scan Health Passport',
+                          Icons.image_search,
+                              () => _handleQuickLinkTap(context, 'Scan Health Passport'),
+                        ),
+                        _buildQuickLinkCard(
+                          context,
+                          'Scan QR Code',
                           Icons.qr_code_scanner,
-                          () => _handleQuickLinkTap(
-                              context, 'Scan Health Passport'),
+                              () => _handleQuickLinkTap(context, 'Scan QR Code'),
                         ),
                         _buildQuickLinkCard(
                           context,
                           'Recent Timeline',
                           Icons.timeline,
-                          () => _handleQuickLinkTap(context, 'Recent Timeline'),
+                              () => _handleQuickLinkTap(context, 'Recent Timeline'),
                         ),
                       ],
                     ),
@@ -110,13 +193,19 @@ class HomeContent extends StatelessWidget {
                           context,
                           'Blood Pressure',
                           Icons.favorite,
-                          () => _handleQuickLinkTap(context, 'Blood Pressure'),
+                              () => _handleQuickLinkTap(context, 'Blood Pressure'),
+                        ),
+                        _buildQuickLinkCard(
+                          context,
+                          'Body Weight',
+                          Icons.scale,
+                              () => _handleQuickLinkTap(context, 'Body Weight'),
                         ),
                         _buildQuickLinkCard(
                           context,
                           'Blood Sugar',
                           Icons.medical_services,
-                          () => _handleQuickLinkTap(context, 'Blood Sugar'),
+                              () => _handleQuickLinkTap(context, 'Blood Sugar'),
                         ),
                       ],
                     ),
@@ -130,23 +219,16 @@ class HomeContent extends StatelessWidget {
     );
   }
 
-  /// Builds a quick link card. When the title is "Recent Timeline",
-  /// it returns the [RecentTimelineCard] (which has the dynamic refresh functionality);
-  /// otherwise it returns a standard card.
-  Widget _buildQuickLinkCard(
-      BuildContext context, String title, IconData icon, VoidCallback onTap) {
+  Widget _buildQuickLinkCard(BuildContext context, String title, IconData icon, VoidCallback onTap) {
     if (title == 'Recent Timeline') {
-      return Expanded(
-        child: RecentTimelineCard(
-          onTap: onTap,
-        ),
-      );
+      return Expanded(child: RecentTimelineCard(onTap: onTap));
     }
+
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          margin: EdgeInsets.all(4),
+          margin: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             color: Colors.blue.shade100,
             borderRadius: BorderRadius.circular(10),
@@ -155,14 +237,11 @@ class HomeContent extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, color: Colors.blue, size: 30),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Colors.black, fontSize: 14),
               ),
             ],
           ),
@@ -171,80 +250,40 @@ class HomeContent extends StatelessWidget {
     );
   }
 
-  /// Handles the tap actions for each quick link.
-  /// "Scan Health Passport" navigates to [OCRScreen],
-  /// "Recent Timeline" navigates to [TimelineScreen],
-  /// and other cards show a snackbar.
   void _handleQuickLinkTap(BuildContext context, String label) {
-    if (label == 'Scan Health Passport') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => OCRScreen()),
-      );
-    } else if (label == 'Recent Timeline') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => TimelineScreen()),
-      );
-    } else if (label == 'Blood Pressure') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => BloodPressureScreen()),
-      );
-    } else if (label == 'Blood Sugar') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => BloodSugarScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Feature for "$label" is not implemented yet.')),
-      );
+    switch (label) {
+      case 'Scan Health Passport':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => OCRScreen()));
+        break;
+      case 'Medication Schedule':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => MedicationScheduleScreen()));
+        break;
+      case 'Scan QR Code':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => BarcodeScannerScreen()));
+        break;
+      case 'Recent Timeline':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => TimelineScreen()));
+        break;
+      case 'Blood Pressure':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => BloodPressureScreen()));
+        break;
+      case 'Body Weight':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => WeightTrackingScreen()));
+        break;
+      case 'Blood Sugar':
+        Navigator.push(context, MaterialPageRoute(builder: (_) => BloodSugarScreen()));
+        break;
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Feature for "$label" is not implemented yet.')),
+        );
     }
   }
 }
 
-class _QuickLinkCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-
-  _QuickLinkCard({required this.icon, required this.label, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(8.0),
-        decoration: BoxDecoration(
-          color: Colors.blue.shade50,
-          borderRadius: BorderRadius.circular(8.0),
-          border: Border.all(color: Colors.blue.shade100),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 30, color: Colors.blue),
-            SizedBox(height: 8.0),
-            Text(label, style: TextStyle(fontSize: 14.0)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-const quickLinks = [
-  {'icon': Icons.qr_code_scanner, 'label': 'Scan Health Passport'},
-  {'icon': Icons.timeline, 'label': 'Recent Timeline'},
-  {'icon': Icons.favorite, 'label': 'Blood Pressure'},
-  {'icon': Icons.medical_services, 'label': 'Blood Sugar'},
-];
-
 class RecentTimelineCard extends StatefulWidget {
   final VoidCallback? onTap;
-  const RecentTimelineCard({Key? key, this.onTap}) : super(key: key);
+  const RecentTimelineCard({super.key, this.onTap});
 
   @override
   _RecentTimelineCardState createState() => _RecentTimelineCardState();
@@ -258,15 +297,12 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
   void initState() {
     super.initState();
     _fetchLatestText();
-    // Refresh every 2 seconds.
-    _timer = Timer.periodic(Duration(seconds: 2), (timer) {
-      _fetchLatestText();
-    });
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _fetchLatestText());
   }
 
   Future<void> _fetchLatestText() async {
     final prefs = await SharedPreferences.getInstance();
-    final List<String> texts = prefs.getStringList('savedTexts') ?? [];
+    final texts = prefs.getStringList('savedTexts') ?? [];
     setState(() {
       _latestText = texts.isNotEmpty ? texts.last : 'No recent record';
     });
@@ -283,17 +319,17 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
     return InkWell(
       onTap: widget.onTap,
       child: Container(
-        margin: EdgeInsets.all(4),
+        margin: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: Colors.blue.shade100,
           borderRadius: BorderRadius.circular(10),
         ),
-        padding: EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
+            const Text(
               "Recent Timeline",
               style: TextStyle(
                 fontSize: 14.0,
@@ -301,10 +337,10 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
                 color: Colors.blue,
               ),
             ),
-            SizedBox(height: 8.0),
+            const SizedBox(height: 8.0),
             Text(
               _latestText,
-              style: TextStyle(fontSize: 12.0, color: Colors.black87),
+              style: const TextStyle(fontSize: 12.0, color: Colors.black87),
             ),
           ],
         ),

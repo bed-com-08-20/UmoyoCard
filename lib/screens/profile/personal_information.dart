@@ -1,27 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UpdatePersonalInfoScreen extends StatefulWidget {
-  // ignore: use_super_parameters
   const UpdatePersonalInfoScreen({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
-  _UpdatePersonalInfoScreenState createState() =>
-      _UpdatePersonalInfoScreenState();
+  _UpdatePersonalInfoScreenState createState() => _UpdatePersonalInfoScreenState();
 }
 
 class _UpdatePersonalInfoScreenState extends State<UpdatePersonalInfoScreen> {
-  // Initial personal information
+  final User? _user = FirebaseAuth.instance.currentUser;
+
+  // Default values while data is loading
   Map<String, String> personalInfo = {
-    'Fullname': 'Harry Yamikani Peter',
-    'Date of Birth': '12/05/1998',
-    'Address': 'Box 320, Balaka',
-    'Phone Number': '+265995602273',
-    'Email Address': 'harrypeter@gmail.com',
-    'National ID': 'WZXE21Q',
-    'Nationality': 'Malawian',
-    'Gender': 'Male',
+    'Fullname': 'Loading...',
+    'Date of Birth': '',
+    'Address': '',
+    'Phone Number': '',
+    'Email Address': '',
+    'National ID': '',
+    'Nationality': '',
+    'Gender': '',
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() {
+      personalInfo['Fullname'] = _user?.displayName ?? 'No name found';
+      personalInfo['Email Address'] = _user?.email ?? 'No email found';
+      personalInfo['Phone Number'] = _user?.phoneNumber ?? 'No phone found';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,21 +91,23 @@ class _UpdatePersonalInfoScreenState extends State<UpdatePersonalInfoScreen> {
   }
 
   Widget _buildInfoRow(String label, String value, BuildContext context) {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(value, style: const TextStyle(color: Colors.black87)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(value, style: const TextStyle(color: Colors.black87)),
+              ],
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.black54),
@@ -104,7 +120,6 @@ class _UpdatePersonalInfoScreenState extends State<UpdatePersonalInfoScreen> {
     );
   }
 
-  // Show a dialog for editing
   void _showEditDialog(BuildContext context, String label, String currentValue) {
     TextEditingController controller = TextEditingController(text: currentValue);
 
@@ -117,7 +132,7 @@ class _UpdatePersonalInfoScreenState extends State<UpdatePersonalInfoScreen> {
             controller: controller,
             decoration: InputDecoration(
               labelText: label,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           actions: [
@@ -130,7 +145,6 @@ class _UpdatePersonalInfoScreenState extends State<UpdatePersonalInfoScreen> {
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  // Update the personal info with the new value
                   personalInfo[label] = controller.text;
                 });
                 Navigator.of(context).pop(); // Close the dialog

@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "988187296650",
-    "project_id": "umoyocard",
-    "storage_bucket": "umoyocard.firebasestorage.app"
+    "project_number": "155124148065",
+    "project_id": "umoyocard-e3b41",
+    "storage_bucket": "umoyocard-e3b41.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:988187296650:android:2b4be34782a42520773e73",
+        "mobilesdk_app_id": "1:155124148065:android:e9c71f08dd7ac395eb4720",
         "android_client_info": {
           "package_name": "com.example.umoyocard"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCng-0S479E1BLLKVVr1eDx72cpdon-UBM"
+          "current_key": "AIzaSyCimshi0Z6ZyCfkGHhJE-kk3FglEtnhNdo"
         }
       ],
       "services": {
