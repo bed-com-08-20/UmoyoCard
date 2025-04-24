@@ -1,8 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-typedef BarcodeCallback = void Function(String);
 
 class BarcodeScannerScreen extends StatefulWidget {
   const BarcodeScannerScreen({super.key});
@@ -12,34 +11,21 @@ class BarcodeScannerScreen extends StatefulWidget {
 }
 
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
-  final TextEditingController dateController = TextEditingController();
-  final TextEditingController clinicController = TextEditingController();
-  final TextEditingController diagnosisController = TextEditingController();
-  final TextEditingController treatmentController = TextEditingController();
+  final TextEditingController contentController = TextEditingController();
   bool isScanning = true;
 
-  // Save record to SharedPreferences (the timeline storage)
+  // Save raw record to timeline
   Future<void> _saveRecord() async {
-    if (dateController.text.isEmpty ||
-        clinicController.text.isEmpty ||
-        diagnosisController.text.isEmpty ||
-        treatmentController.text.isEmpty) {
+    if (contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields!')),
+        const SnackBar(content: Text('Nothing to save!')),
       );
       return;
     }
 
-    String savedText = '''
-Date: ${dateController.text}
-Clinic: ${clinicController.text}
-Diagnosis: ${diagnosisController.text}
-Treatment: ${treatmentController.text}
-''';
-
     final prefs = await SharedPreferences.getInstance();
     List<String> savedTexts = prefs.getStringList('savedTexts') ?? [];
-    savedTexts.add(savedText);
+    savedTexts.add(contentController.text.trim());
     await prefs.setStringList('savedTexts', savedTexts);
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -48,53 +34,72 @@ Treatment: ${treatmentController.text}
   }
 
   void _processBarcode(String code) {
-    setState(() {
-      isScanning = false;
-    });
+    setState(() => isScanning = false);
 
-    // Assume QR/barcode data is in JSON format
-
-    try {
-      Map<String, dynamic> data = _parseQRData(code);
-      dateController.text = data['date'] ?? '';
-      clinicController.text = data['clinic'] ?? '';
-      diagnosisController.text = data['diagnosis'] ?? '';
-      treatmentController.text = data['treatment'] ?? '';
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid QR/Barcode format')),
-      );
+    String parsed = _extractMedicalContent(code);
+    if (parsed.isEmpty) {
+      parsed = code; // fallback to full code if nothing extracted
     }
+
+    contentController.text = parsed;
   }
 
-  Map<String, dynamic> _parseQRData(String data) {
+  String _extractMedicalContent(String raw) {
+    final buffer = StringBuffer();
+
     try {
-      return {
-        "date": RegExp(r'Date: (.+)').firstMatch(data)?.group(1) ?? "",
-        "clinic": RegExp(r'Clinic: (.+)').firstMatch(data)?.group(1) ?? "",
-        "diagnosis": RegExp(r'Diagnosis: (.+)').firstMatch(data)?.group(1) ?? "",
-        "treatment": RegExp(r'Treatment: (.+)').firstMatch(data)?.group(1) ?? "",
-      };
-    } catch (e) {
-      return {};
+      final jsonData = json.decode(raw);
+      if (jsonData is Map<String, dynamic>) {
+        jsonData.forEach((key, value) {
+          if (_isMedicalKey(key)) {
+            buffer.writeln('${_capitalize(key)}: $value');
+          }
+        });
+      }
+    } catch (_) {
+      // fallback to extracting lines with keywords
+      final lines = raw.split('\n');
+      for (final line in lines) {
+        if (_isMedicalLine(line)) {
+          buffer.writeln(line.trim());
+        }
+      }
     }
+
+    return buffer.toString().trim();
   }
+
+  bool _isMedicalKey(String key) {
+    final medicalKeys = [
+      'date', 'clinic', 'hospital', 'diagnosis', 'treatment',
+      'medication', 'prescription', 'symptoms', 'observations',
+      'doctor', 'patient', 'notes'
+    ];
+    return medicalKeys.any((k) => key.toLowerCase().contains(k));
+  }
+
+  bool _isMedicalLine(String line) {
+    final keywords = [
+      'clinic', 'hospital', 'diagnosis', 'treatment',
+      'medication', 'prescription', 'symptom', 'observation',
+      'date', 'doctor', 'patient'
+    ];
+    return keywords.any((word) =>
+        line.toLowerCase().contains(word));
+  }
+
+  String _capitalize(String str) =>
+      str.isNotEmpty ? str[0].toUpperCase() + str.substring(1) : str;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: const Text("Scan Medical QR/Barcode"),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'Scan QR/Barcode',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.blueAccent,
-          ),
-        ),
+        foregroundColor: Colors.blueAccent,
       ),
       body: Column(
         children: [
@@ -102,16 +107,22 @@ Treatment: ${treatmentController.text}
             flex: 3,
             child: isScanning
                 ? MobileScanner(
-              onDetect: (barcode) {
-                if (barcode.barcodes.isNotEmpty) {
-                  _processBarcode(barcode.barcodes.first.rawValue ?? "");
-                }
+              onDetect: (barcodeCapture) {
+                final code = barcodeCapture.barcodes.firstOrNull?.rawValue;
+                if (code != null) _processBarcode(code);
               },
             )
                 : Center(
-              child: const Text(
-                "Scan Complete! Edit details below.",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Scan Complete!", style: TextStyle(fontWeight: FontWeight.bold)),
+                  TextButton.icon(
+                    onPressed: () => setState(() => isScanning = true),
+                    icon: const Icon(Icons.replay),
+                    label: const Text("Scan Again"),
+                  )
+                ],
               ),
             ),
           ),
@@ -119,49 +130,38 @@ Treatment: ${treatmentController.text}
             flex: 2,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildEditableField("Date of Encounter", dateController),
-                    _buildEditableField("Hospital/Clinic Name", clinicController),
-                    _buildEditableField("Diagnosis", diagnosisController),
-                    _buildEditableField("Treatment/Prescriptions", treatmentController),
-                    const SizedBox(height: 24.0),
-                    ElevatedButton(
-                      onPressed: _saveRecord,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text("Scanned Medical Content", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: contentController,
+                      maxLines: null,
+                      expands: true,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
                       ),
-                      child: const Text("Save Record"),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _saveRecord,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    ),
+                    child: const Text("Save Record"),
+                  ),
+                ],
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildEditableField(String label, TextEditingController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0)),
-        const SizedBox(height: 8.0),
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-            filled: true,
-            fillColor: Colors.grey.shade100,
-          ),
-        ),
-        const SizedBox(height: 16.0),
-      ],
     );
   }
 }
