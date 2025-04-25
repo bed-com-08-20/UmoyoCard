@@ -7,6 +7,7 @@ import 'package:umoyocard/screens/home/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase/firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,20 +16,30 @@ void main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions
-        .currentPlatform, // Use your Firebase options here
+    options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Check login status
+  final prefs = await SharedPreferences.getInstance();
+  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
   runApp(
     ChangeNotifierProvider(
       create: (_) => PasswordProvider(),
-      child: const MyApp(),
+      child: MyApp(
+        initialRoute: isLoggedIn ? '/home' : '/login',
+      ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String initialRoute;
+
+  const MyApp({
+    super.key,
+    required this.initialRoute,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +49,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      initialRoute: '/login',
+      initialRoute: initialRoute,
       routes: {
         '/login': (context) => const LoginScreen(),
         '/loading': (context) => LoadingScreen(),

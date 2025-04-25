@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:umoyocard/screens/login/create_password.dart';
+import 'package:umoyocard/providers/password_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateAccount extends StatelessWidget {
   const CreateAccount({super.key});
@@ -55,7 +57,7 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
 
   final Map<String, String?> _errorMessages = {};
 
-  Future<void> _saveToFirebase() async {
+  Future<void> _saveToSharedPrefs() async {
     bool isValid = true;
 
     setState(() {
@@ -96,21 +98,28 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
 
     if (isValid) {
       try {
-        await FirebaseFirestore.instance.collection('users').add({
-          'fullname': _fullnameController.text,
-          'dob': _dobController.text,
-          'address': _addressController.text,
-          'phone': _phoneController.text,
-          'email': _emailController.text,
-          'national_id': _nationalIdController.text,
-          'nationality': _nationalityController.text,
-          'gender': _genderController.text,
-          'created_at': Timestamp.now(),
-        });
+        final prefs = await SharedPreferences.getInstance();
+
+        // Save all user data to SharedPreferences
+        await prefs.setString('fullname', _fullnameController.text);
+        await prefs.setString('dob', _dobController.text);
+        await prefs.setString('address', _addressController.text);
+        await prefs.setString('phone', _phoneController.text);
+        await prefs.setString('email', _emailController.text);
+        await prefs.setString('national_id', _nationalIdController.text);
+        await prefs.setString('nationality', _nationalityController.text);
+        await prefs.setString('gender', _genderController.text);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Account created successfully! 🎉")),
         );
+
+        // Pass data to PasswordProvider before navigation
+        final passwordProvider =
+            Provider.of<PasswordProvider>(context, listen: false);
+        passwordProvider.email = _emailController.text;
+        passwordProvider.phone = _phoneController.text;
+        passwordProvider.fullName = _fullnameController.text;
 
         Navigator.push(
           context,
@@ -118,7 +127,7 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
+          SnackBar(content: Text("Error saving data: $e")),
         );
       }
     }
@@ -187,7 +196,7 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: _saveToFirebase,
+            onPressed: _saveToSharedPrefs,
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 50),
               backgroundColor: Colors.blueAccent,

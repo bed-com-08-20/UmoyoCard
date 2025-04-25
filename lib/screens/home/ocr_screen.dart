@@ -41,14 +41,17 @@ class _OCRScreenState extends State<OCRScreen> {
     final prefs = await SharedPreferences.getInstance();
     List<String> savedTexts = prefs.getStringList('savedTexts') ?? [];
     List<String> savedImages = prefs.getStringList('savedImages') ?? [];
+    List<String> savedDates = prefs.getStringList('savedDates') ?? [];
 
     savedTexts.add(_extractedText);
     if (_imageFile != null) {
       savedImages.add(_imageFile!.path);
     }
+    savedDates.add(DateTime.now().toIso8601String());
 
     await prefs.setStringList('savedTexts', savedTexts);
     await prefs.setStringList('savedImages', savedImages);
+    await prefs.setStringList('savedDates', savedDates);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Health record saved successfully!')),
@@ -149,14 +152,15 @@ Identify and organize the following fields if they are present:
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.teal,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'OCR Scan',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.blueAccent,
+            color: Colors.white,
           ),
         ),
       ),

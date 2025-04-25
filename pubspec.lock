@@ -185,6 +185,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.3"
+  fhir:
+    dependency: "direct main"
+    description:
+      name: fhir
+      sha256: fa4f739a3aa52d7817a098e50bf9e7e7159c1c85159baf08b03ce0e5c64be4cd
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.11.4"
   file:
     dependency: transitive
     description:
@@ -294,6 +302,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0"
+  flutter_markdown:
+    dependency: "direct main"
+    description:
+      name: flutter_markdown
+      sha256: "634622a3a826d67cb05c0e3e576d1812c430fa98404e95b60b131775c73d76ec"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.7"
   flutter_native_splash:
     dependency: "direct main"
     description:
@@ -320,6 +336,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  freezed_annotation:
+    dependency: transitive
+    description:
+      name: freezed_annotation
+      sha256: c2e2d632dd9b8a2b7751117abcfc2b4888ecfe181bd9fca7170d9ef02e595fe2
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.4"
   google_generative_ai:
     dependency: "direct main"
     description:
@@ -624,6 +648,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.257.0"
+  markdown:
+    dependency: transitive
+    description:
+      name: markdown
+      sha256: "935e23e1ff3bc02d390bad4d4be001208ee92cc217cb5b5a6c19bc14aaa318c1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.3.0"
   matcher:
     dependency: transitive
     description:
@@ -1037,6 +1069,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
+  xml2json:
+    dependency: transitive
+    description:
+      name: xml2json
+      sha256: "8a7ae63b76676f083d81287b61f03222952609c0507893bc62e60a4a588a9702"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.2.7"
   yaml:
     dependency: transitive
     description:
