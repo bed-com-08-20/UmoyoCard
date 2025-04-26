@@ -560,19 +560,6 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
           _buildPreviousRecordsList(),
           SizedBox(height: 10),
 
-          // Add Record Button
-          Container(
-            padding: EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: _showAddRecordDialog,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                minimumSize: Size(double.infinity, 50),
-              ),
-              child:
-                  Text('+ Add Record', style: TextStyle(color: Colors.white)),
-            ),
-          ),
         ],
       ),
     );
