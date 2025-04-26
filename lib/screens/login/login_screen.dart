@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:umoyocard/screens/home/home_screen.dart';
 import 'package:umoyocard/screens/login/create_account.dart';
 import 'package:umoyocard/screens/login/forget_password.dart';
-//import 'create_password_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,41 +12,64 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _nationalIdController = TextEditingController();
+  final TextEditingController _emailOrPhoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   void handleLogin() async {
-    String nationalId = _nationalIdController.text;
-    String password = _passwordController.text;
+    String emailOrPhone = _emailOrPhoneController.text.trim();
+    String password = _passwordController.text.trim();
 
-    if (nationalId.isEmpty) {
+    if (emailOrPhone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your Email')),
+        const SnackBar(content: Text('Please enter your Email or Phone')),
       );
       return;
     }
 
-    if (password.isNotEmpty) {
-      // Store login times
-      final prefs = await SharedPreferences.getInstance();
-      final currentLogin = DateTime.now().toString();
-      final previousLogin =
-          prefs.getString('lastLogin'); // Get the current last login
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your password!')),
+      );
+      return;
+    }
 
-      // Store current as lastLogin and previous as previousLogin
+    setState(() {
+      _isLoading = true;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final storedEmail = prefs.getString('email');
+    final storedPhone = prefs.getString('phone');
+    final storedPassword = prefs.getString('password');
+
+    if ((emailOrPhone == storedEmail || emailOrPhone == storedPhone) &&
+        password == storedPassword) {
+      // Store login times
+      final currentLogin = DateTime.now().toString();
+      final previousLogin = prefs.getString('lastLogin');
+
       await prefs.setString('lastLogin', currentLogin);
       if (previousLogin != null) {
         await prefs.setString('previousLogin', previousLogin);
       }
+      await prefs.setBool('isLoggedIn', true);
 
-      // Navigate to LoadingScreen first
-      Navigator.pushReplacementNamed(context, '/loading');
+      // Navigate to home screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your password!')),
+        const SnackBar(content: Text('Invalid credentials! Please try again.')),
       );
     }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -79,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 32.0),
               TextField(
-                controller: _nationalIdController,
+                controller: _emailOrPhoneController,
                 decoration: InputDecoration(
                   labelText: 'Phone number or Email',
                   border: OutlineInputBorder(
@@ -125,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24.0),
               ElevatedButton(
-                onPressed: handleLogin,
+                onPressed: _isLoading ? null : handleLogin,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
@@ -133,14 +155,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   padding: const EdgeInsets.all(16.0),
                 ),
-                child: const Text(
-                  'Login',
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
               const SizedBox(height: 16.0),
               Row(

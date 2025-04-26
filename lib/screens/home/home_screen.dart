@@ -147,6 +147,12 @@ class HomeContent extends StatelessWidget {
                           () => _handleQuickLinkTap(
                               context, 'Scan Health Passport'),
                         ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Row(
+                      children: [
                         _buildQuickLinkCard(
                           context,
                           'Recent Timeline',

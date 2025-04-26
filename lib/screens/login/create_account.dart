@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 import 'package:umoyocard/screens/login/create_password.dart';
+import 'package:umoyocard/providers/password_providers.dart';
 
 class CreateAccount extends StatelessWidget {
   const CreateAccount({super.key});
@@ -11,26 +14,22 @@ class CreateAccount extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text("Create an Account"),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const Text(
-                "Sign up to get started",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 16),
-              CreateAccountForm(),
-            ],
-          ),
+      body: const SingleChildScrollView(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              "Sign up to get started",
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            SizedBox(height: 16),
+            CreateAccountForm(),
+          ],
         ),
       ),
     );
@@ -38,89 +37,121 @@ class CreateAccount extends StatelessWidget {
 }
 
 class CreateAccountForm extends StatefulWidget {
+  const CreateAccountForm({super.key});
+
   @override
-  _CreateAccountFormState createState() => _CreateAccountFormState();
+  State<CreateAccountForm> createState() => _CreateAccountFormState();
 }
 
 class _CreateAccountFormState extends State<CreateAccountForm> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _fullnameController = TextEditingController();
+  final TextEditingController _surnameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _nationalIdController = TextEditingController();
-  final TextEditingController _nationalityController = TextEditingController();
   final TextEditingController _genderController = TextEditingController();
 
   final Map<String, String?> _errorMessages = {};
+  final Uuid _uuid = const Uuid();
 
-  Future<void> _saveToFirebase() async {
-    bool isValid = true;
+  String _formatDateForFHIR(String inputDate) {
+    try {
+      final parts = inputDate.split('/');
+      if (parts.length == 3) {
+        final day = parts[0].padLeft(2, '0');
+        final month = parts[1].padLeft(2, '0');
+        final year = parts[2];
+        return '$year-$month-$day'; // FHIR format (YYYY-MM-DD)
+      }
+    } catch (e) {
+      debugPrint('Error formatting date: $e');
+    }
+    return inputDate; // fallback
+  }
 
-    setState(() {
-      _errorMessages.clear();
-      if (_fullnameController.text.isEmpty) {
-        _errorMessages['fullname'] = "This field is required";
-        isValid = false;
-      }
-      if (_dobController.text.isEmpty) {
-        _errorMessages['dob'] = "This field is required";
-        isValid = false;
-      }
-      if (_addressController.text.isEmpty) {
-        _errorMessages['address'] = "This field is required";
-        isValid = false;
-      }
-      if (_phoneController.text.isEmpty) {
-        _errorMessages['phone'] = "This field is required";
-        isValid = false;
-      }
-      if (_emailController.text.isEmpty) {
-        _errorMessages['email'] = "This field is required";
-        isValid = false;
-      }
-      if (_nationalIdController.text.isEmpty) {
-        _errorMessages['national_id'] = "This field is required";
-        isValid = false;
-      }
-      if (_nationalityController.text.isEmpty) {
-        _errorMessages['nationality'] = "This field is required";
-        isValid = false;
-      }
-      if (_genderController.text.isEmpty) {
-        _errorMessages['gender'] = "This field is required";
-        isValid = false;
-      }
-    });
+  Future<void> _saveToSharedPrefs() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    if (isValid) {
-      try {
-        await FirebaseFirestore.instance.collection('users').add({
-          'fullname': _fullnameController.text,
-          'dob': _dobController.text,
-          'address': _addressController.text,
-          'phone': _phoneController.text,
-          'email': _emailController.text,
-          'national_id': _nationalIdController.text,
-          'nationality': _nationalityController.text,
-          'gender': _genderController.text,
-          'created_at': Timestamp.now(),
-        });
+    setState(() => _errorMessages.clear());
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Account created successfully! 🎉")),
-        );
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => CreatePassword()),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
-        );
+      // Generate FHIR-compatible patient ID
+      final uuid = _uuid.v4();
+      final userId =
+          'pat-$uuid'; // This format should match the FHIR validation
+
+      debugPrint('Generated patient ID: $userId');
+
+      // Format date before saving
+      final dob = _formatDateForFHIR(_dobController.text);
+
+      // Combine surname and first name for full name
+      final fullName =
+          '${_surnameController.text} ${_firstNameController.text}';
+
+      // Save all user data to SharedPreferences
+      await Future.wait([
+        prefs.setString('userId', userId),
+        prefs.setString('userName', fullName),
+        prefs.setString('surname', _surnameController.text),
+        prefs.setString('firstName', _firstNameController.text),
+        if (_phoneController.text.isNotEmpty)
+          prefs.setString('userPhone', _phoneController.text),
+        prefs.setString('email', _emailController.text),
+        prefs.setString('dob', dob),
+        if (_genderController.text.isNotEmpty)
+          prefs.setString('gender', _genderController.text),
+      ]);
+
+      // Verify the ID was saved correctly
+      final savedId = prefs.getString('userId');
+      if (savedId == null || savedId.isEmpty) {
+        throw Exception('Failed to save patient ID');
       }
+
+      // Pass data to PasswordProvider
+      final passwordProvider =
+          Provider.of<PasswordProvider>(context, listen: false);
+      passwordProvider.email = _emailController.text;
+      passwordProvider.phone = _phoneController.text;
+      passwordProvider.fullName = fullName;
+      passwordProvider.userId =
+          userId; // Pass the FHIR-compatible ID to PasswordProvider
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Account created successfully!")),
+      );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const CreatePassword()),
+      );
+    } catch (e) {
+      debugPrint('Error saving account: $e');
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error creating account: ${e.toString()}")),
+      );
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        _dobController.text = "${picked.day}/${picked.month}/${picked.year}";
+      });
     }
   }
 
@@ -130,103 +161,130 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
       key: _formKey,
       child: Column(
         children: [
-          FormTextField(
-            label: "Fullname",
-            controller: _fullnameController,
-            errorText: _errorMessages['fullname'],
+          TextFormField(
+            controller: _surnameController,
+            decoration: InputDecoration(
+              labelText: "Surname*",
+              errorText: _errorMessages['surname'],
+              border: const OutlineInputBorder(),
+            ),
+            validator: (value) =>
+                value?.isEmpty ?? true ? "Required field" : null,
             onChanged: (value) =>
-                setState(() => _errorMessages['fullname'] = null),
+                setState(() => _errorMessages['surname'] = null),
           ),
-          FormTextField(
-            label: "Date of Birth",
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _firstNameController,
+            decoration: InputDecoration(
+              labelText: "First Name*",
+              errorText: _errorMessages['firstName'],
+              border: const OutlineInputBorder(),
+            ),
+            validator: (value) =>
+                value?.isEmpty ?? true ? "Required field" : null,
+            onChanged: (value) =>
+                setState(() => _errorMessages['firstName'] = null),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
             controller: _dobController,
-            errorText: _errorMessages['dob'],
+            decoration: InputDecoration(
+              labelText: "Date of Birth (DD/MM/YYYY)*",
+              errorText: _errorMessages['dob'],
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.calendar_today),
+                onPressed: () => _selectDate(context),
+              ),
+            ),
+            onTap: () => _selectDate(context),
+            validator: (value) {
+              if (value?.isEmpty ?? true) return "Required field";
+              // Simple date format validation
+              final parts = value!.split('/');
+              if (parts.length != 3) return "Use DD/MM/YYYY format";
+              try {
+                final day = int.parse(parts[0]);
+                final month = int.parse(parts[1]);
+                final year = int.parse(parts[2]);
+                if (day < 1 || day > 31) return "Invalid day";
+                if (month < 1 || month > 12) return "Invalid month";
+                if (year < 1900 || year > DateTime.now().year)
+                  return "Invalid year";
+              } catch (e) {
+                return "Use numbers only (DD/MM/YYYY)";
+              }
+              return null;
+            },
             onChanged: (value) => setState(() => _errorMessages['dob'] = null),
           ),
-          FormTextField(
-            label: "Address",
-            controller: _addressController,
-            errorText: _errorMessages['address'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['address'] = null),
-          ),
-          FormTextField(
-            label: "Phone Number",
+          const SizedBox(height: 16),
+          TextFormField(
             controller: _phoneController,
-            errorText: _errorMessages['phone'],
+            decoration: InputDecoration(
+              labelText: "Phone Number",
+              errorText: _errorMessages['phone'],
+              border: const OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.phone,
             onChanged: (value) =>
                 setState(() => _errorMessages['phone'] = null),
           ),
-          FormTextField(
-            label: "Email Address",
+          const SizedBox(height: 16),
+          TextFormField(
             controller: _emailController,
-            errorText: _errorMessages['email'],
+            decoration: InputDecoration(
+              labelText: "Email Address*",
+              errorText: _errorMessages['email'],
+              border: const OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.emailAddress,
+            validator: (value) =>
+                value?.isEmpty ?? true ? "Required field" : null,
             onChanged: (value) =>
                 setState(() => _errorMessages['email'] = null),
           ),
-          FormTextField(
-            label: "National ID",
-            controller: _nationalIdController,
-            errorText: _errorMessages['national_id'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['national_id'] = null),
-          ),
-          FormTextField(
-            label: "Nationality",
-            controller: _nationalityController,
-            errorText: _errorMessages['nationality'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['nationality'] = null),
-          ),
-          FormTextField(
-            label: "Gender",
+          const SizedBox(height: 16),
+          TextFormField(
             controller: _genderController,
-            errorText: _errorMessages['gender'],
-            onChanged: (value) =>
-                setState(() => _errorMessages['gender'] = null),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _saveToFirebase,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 50),
-              backgroundColor: Colors.blueAccent,
+            decoration: const InputDecoration(
+              labelText: "Gender",
+              border: OutlineInputBorder(),
             ),
-            child: const Text("Next", style: TextStyle(color: Colors.white)),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _saveToSharedPrefs,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text(
+                "Continue",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
-}
-
-class FormTextField extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-  final String? errorText;
-  final ValueChanged<String> onChanged;
-
-  const FormTextField({
-    super.key,
-    required this.label,
-    required this.controller,
-    this.errorText,
-    required this.onChanged,
-  });
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(),
-          errorText: errorText,
-        ),
-      ),
-    );
+  void dispose() {
+    _surnameController.dispose();
+    _firstNameController.dispose();
+    _dobController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _genderController.dispose();
+    super.dispose();
   }
 }
