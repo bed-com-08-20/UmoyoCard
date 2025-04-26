@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:umoyocard/screens/home/home_screen.dart';
+import 'package:uuid/uuid.dart';
+import 'package:umoyocard/screens/login/login_screen.dart';
 
 class PasswordProvider extends ChangeNotifier {
   final TextEditingController passwordController = TextEditingController();
@@ -9,32 +10,22 @@ class PasswordProvider extends ChangeNotifier {
 
   String? passwordError;
   String? confirmPasswordError;
-  String? email; // Will be passed from CreateAccountForm
-  String? phone; // Will be passed from CreateAccountForm
-  String? fullName; // Will be passed from CreateAccountForm
+  String? email;
+  String? phone;
+  String? fullName;
+  String? userId; // Will be passed from CreateAccountForm
 
   final FocusNode passwordFocusNode = FocusNode();
   final FocusNode confirmPasswordFocusNode = FocusNode();
 
   PasswordProvider() {
-    passwordController.addListener(() {
-      _validatePasswords();
-    });
-
-    confirmPasswordController.addListener(() {
-      _validatePasswords();
-    });
-
+    passwordController.addListener(_validatePasswords);
+    confirmPasswordController.addListener(_validatePasswords);
     passwordFocusNode.addListener(() {
-      if (!passwordFocusNode.hasFocus) {
-        _validatePasswords();
-      }
+      if (!passwordFocusNode.hasFocus) _validatePasswords();
     });
-
     confirmPasswordFocusNode.addListener(() {
-      if (!confirmPasswordFocusNode.hasFocus) {
-        _validatePasswords();
-      }
+      if (!confirmPasswordFocusNode.hasFocus) _validatePasswords();
     });
   }
 
@@ -54,27 +45,20 @@ class PasswordProvider extends ChangeNotifier {
   }
 
   void _validatePasswords() {
-    String password = passwordController.text.trim();
-    String confirmPassword = confirmPasswordController.text.trim();
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
 
-    passwordError = null;
-    confirmPasswordError = null;
-
-    if (password.isNotEmpty) {
-      passwordError = _getPasswordError(password);
-    }
-
-    if (confirmPassword.isNotEmpty) {
-      confirmPasswordError =
-          _getConfirmPasswordError(password, confirmPassword);
-    }
+    passwordError = password.isEmpty ? null : _getPasswordError(password);
+    confirmPasswordError = confirmPassword.isEmpty
+        ? null
+        : _getConfirmPasswordError(password, confirmPassword);
 
     notifyListeners();
   }
 
   Future<void> savePasswordToSharedPrefs(BuildContext context) async {
-    String password = passwordController.text.trim();
-    String confirmPassword = confirmPasswordController.text.trim();
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
 
     if (password.isEmpty) {
       passwordError = "Password cannot be empty";
@@ -87,29 +71,32 @@ class PasswordProvider extends ChangeNotifier {
       return;
     }
 
-    // Final validation
     _validatePasswords();
+    if (passwordError != null || confirmPasswordError != null) return;
 
-    if (passwordError == null && confirmPasswordError == null) {
-      final prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
-      // Generate a simple user ID (in a real app, use Firebase Auth UID)
-      String userId = DateTime.now().millisecondsSinceEpoch.toString();
-
-      // Save user credentials
-      await prefs.setString('userId', userId);
-      await prefs.setString('userName', fullName ?? '');
-      await prefs.setString('email', email ?? '');
-      await prefs.setString('phone', phone ?? '');
-      await prefs.setString('password', password);
-      await prefs.setBool('isLoggedIn', true);
-
-      // Navigate to home screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+    // Use the userId that was passed from CreateAccountForm
+    if (userId == null || userId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error: Missing user ID")),
       );
+      return;
     }
+
+    await Future.wait([
+      prefs.setString('userId', userId!),
+      prefs.setString('userName', fullName ?? ''),
+      prefs.setString('email', email ?? ''),
+      prefs.setString('phone', phone ?? ''),
+      prefs.setString('password', password),
+      prefs.setBool('isLoggedIn', true),
+    ]);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+    );
   }
 
   @override
