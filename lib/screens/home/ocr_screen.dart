@@ -30,7 +30,6 @@ class _OCRScreenState extends State<OCRScreen> {
     );
   }
 
-  // Save image locally
   Future<String> saveImageLocally(File image) async {
     final directory = await getApplicationDocumentsDirectory();
     final imagePath =
@@ -39,19 +38,61 @@ class _OCRScreenState extends State<OCRScreen> {
     return imagePath;
   }
 
-  // Save blood pressure data to SharedPreferences
+  Future<List<Map<String, dynamic>>> _getExistingBloodPressureData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> existingData = prefs.getStringList('bloodPressureReadings') ?? [];
+    return existingData.map((entry) {
+      final parts = entry.split('|');
+      return {
+        'date': parts[0],
+        'reading': parts[1],
+        'timestamp': parts[2],
+      };
+    }).toList();
+  }
+
   Future<void> _saveBloodPressureData(String bpData) async {
     final prefs = await SharedPreferences.getInstance();
     final List<String> existingData = prefs.getStringList('bloodPressureReadings') ?? [];
+    final existingRecords = await _getExistingBloodPressureData();
     
-    final newEntry = '${DateTime.now().toIso8601String()}|$bpData';
-    existingData.add(newEntry);
+    // Parse the new reading (assuming format: "120/80 mmHg" or "Date: 01/01/23 - 120/80 mmHg")
+    final newReading = _parseBloodPressureReading(bpData);
     
-    await prefs.setStringList('bloodPressureReadings', existingData);
-    debugPrint('Blood pressure data saved successfully');
+    // Check if this reading already exists
+    final isDuplicate = existingRecords.any((record) => 
+        record['reading'] == newReading['reading'] && 
+        (newReading['date'] == null || record['date'] == newReading['date']));
+    
+    if (!isDuplicate) {
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final newEntry = '${newReading['date'] ?? DateTime.now().toIso8601String()}|${newReading['reading']}|$timestamp';
+      existingData.add(newEntry);
+      
+      await prefs.setStringList('bloodPressureReadings', existingData);
+      debugPrint('New blood pressure data saved successfully');
+    } else {
+      debugPrint('Duplicate blood pressure reading detected - not saving');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This blood pressure reading already exists in your records')),
+      );
+    }
   }
 
-  // Pick an image from camera or gallery
+  Map<String, dynamic> _parseBloodPressureReading(String bpData) {
+    // Try to extract date and reading from the string
+    final dateRegex = RegExp(r'(\d{1,2}/\d{1,2}/\d{2,4})');
+    final readingRegex = RegExp(r'(\d{2,3}/\d{2,3})\s*(mmHg)?');
+    
+    final dateMatch = dateRegex.firstMatch(bpData);
+    final readingMatch = readingRegex.firstMatch(bpData);
+    
+    return {
+      'date': dateMatch?.group(1),
+      'reading': readingMatch?.group(1) ?? bpData.trim(),
+    };
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: source);
@@ -68,19 +109,16 @@ class _OCRScreenState extends State<OCRScreen> {
 
       setState(() {
         _isProcessing = false;
-        
       });
     }
   }
 
-  // Check for blood pressure data and route accordingly
   void _checkForBloodPressure(String text) {
     if (text.contains("Blood Pressure Readings:")) {
       final bpData = text.replaceFirst("Blood Pressure Readings:", "").trim();
       if (bpData.isNotEmpty && !bpData.contains("No blood pressure")) {
         _saveBloodPressureData(bpData).then((_) {
           Navigator.pushReplacement(
-            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
               builder: (context) => BloodPressureScreen.withData(bpData),
@@ -91,7 +129,6 @@ class _OCRScreenState extends State<OCRScreen> {
     }
   }
 
-  // Use Gemini API to process OCR and extract medical data
   Future<void> _processOCR(File imageFile) async {
     try {
       final imageBytes = await imageFile.readAsBytes();
@@ -100,32 +137,23 @@ class _OCRScreenState extends State<OCRScreen> {
 You are a skilled medical assistant. Carefully extract and correct all relevant medical information from the image of a health document.
 
 Please follow these guidelines carefully:
-- If a section is not present in the image, skip it.
-- Focus on extracting exactly what is written, but make corrections to spelling, grammar, or formatting for clarity.
-- Do not guess or hallucinate information; only extract what can be identified.
-- Present the result in a clean, readable, and structured format using labeled sections or bullet points.
-- Do NOT use Markdown (e.g., **bold** or `code` style).
-- The structure should make sense to a healthcare worker or patient reading it.
-- Do NOT include explanations, summaries, or irrelevant details—only the cleaned and structured medical data.
-
-Always ensure the information is medically accurate and properly formatted for clarity and future digital record-keeping.
-
-Identify and organize the following fields if they are present:
-
-1. Blood Pressure Readings (format as XXX/YY mmHg with dates if available)
-2. Date(s) — Format as dd/mm/yy
-3. Medical Condition(s) or Diagnosis
-4. Medication Name(s)
-5. Dosage and Frequency
-6. Administration Instructions
-7. Doctor or Hospital Name
-8. Patient Information (Name, Age, etc.)
-9. Signs, symptoms, or Observations
+- Extract blood pressure readings with high precision
+- If multiple readings exist, list them all with dates if available
+- Format blood pressure as: [date if available] [systolic/diastolic] mmHg
+- Example: "01/01/23 120/80 mmHg" or "120/80 mmHg" if no date
+- For multiple readings: "01/01/23 120/80 mmHg, 02/01/23 118/78 mmHg"
+- If a section is not present in the image, skip it
+- Focus on extracting exactly what is written
+- Make corrections only to obvious errors in spelling or formatting
+- Do not guess or hallucinate information
+- Present the result in a clean, structured format
+- Do NOT use Markdown
+- The structure should be clear and consistent
 
 Return the data in this exact format:
 
 Blood Pressure Readings:
-[date if available] [reading1]
+[date if available] [reading1], [date if available] [reading2], etc.
 
 Other Medical Information:
 - Date: [date]

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:nativewrappers/_internal/vm/lib/math_patch.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -351,6 +350,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                       color: Colors.lightBlue[100],
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    child: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -369,81 +369,94 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                             ),
                           )
                         else
-                         LayoutBuilder(
-                            builder: (context, constraints) {
-                              // Calculate a responsive height based on screen size
-                              final chartHeight = constraints.maxHeight > 600 ? 180.0 : 150.0;
-                              final barWidth = constraints.maxWidth / (filteredRecords.length + 2);
+                           LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Calculate a responsive height based on screen size
+                            final chartHeight = constraints.maxHeight > 600 ? 180.0 : 150.0;
 
-                              return Container(
-                                height: chartHeight,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                child: BarChart(
-                                  BarChartData(
-                                    alignment: BarChartAlignment.spaceAround,
-                                    maxY: 200, // Set a reasonable max Y value for blood pressure
-                                    minY: 0,    // Set minimum Y value
-                                    barTouchData: BarTouchData(enabled: true),
-                                    titlesData: FlTitlesData(
-                                      show: true,
-                                      bottomTitles: AxisTitles(
-                                        sideTitles: SideTitles(
-                                          showTitles: true,
-                                          getTitlesWidget: (value, meta) {
-                                            return Padding(
-                                              padding: const EdgeInsets.only(top: 4.0),
-                                              child: Text(
-                                                '${value.toInt() + 1}',
-                                                style: const TextStyle(fontSize: 10),
-                                              ),
-                                            );
-                                          },
-                                          reservedSize: 20, // Reserve space for bottom titles
+                            return Container(
+                              height: chartHeight,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: BarChart(
+                                BarChartData(
+                                  alignment: BarChartAlignment.spaceAround,
+                                  minY: 0,    // Set minimum Y value
+                                  barTouchData: BarTouchData(enabled: true),
+                                  titlesData: FlTitlesData(
+                                    show: true,
+                                    bottomTitles: AxisTitles(
+                                      axisNameWidget: const Padding(
+                                          padding: EdgeInsets.only(top: 8.0),
+                                          child: Text(
+                                            'Record number',
+                                            style: TextStyle(fontSize: 12),
+                                          ),
                                         ),
-                                      ),
-                                      leftTitles: AxisTitles(
-                                        sideTitles: SideTitles(
-                                          showTitles: true,
-                                          reservedSize: 30,
-                                          getTitlesWidget: (value, meta) {
-                                            return Text(
-                                              value.toInt().toString(),
+                                      axisNameSize: 30,
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        getTitlesWidget: (value, meta) {
+                                          return Padding(
+                                            padding: const EdgeInsets.only(top: 4.0),
+                                            child: Text(
+                                              '${value.toInt() + 1}',
                                               style: const TextStyle(fontSize: 10),
-                                            );
-                                          },
-                                        ),
+                                            ),
+                                          );
+                                        },
+                                        reservedSize: 30, // Reserve space for bottom titles
                                       ),
-                                      rightTitles: const AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false)),
-                                      topTitles: const AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false)),
                                     ),
-                                    borderData: FlBorderData(show: true),
-                                    gridData: FlGridData(show: true),
-                                    barGroups: filteredRecords
-                                        .asMap()
-                                        .entries
-                                        .map((entry) {
-                                      int index = entry.key;
-                                      BloodPressureRecord record = entry.value;
-                                      return BarChartGroupData(
-                                        x: index,
-                                        barRods: [
-                                          BarChartRodData(
-                                            toY: record.systolic.toDouble(),
-                                            color: record.color,
-                                            width: min(barWidth, 16), // Limit maximum bar width
-                                          )
-                                        ],
-                                      );
-                                    }).toList(),
+                                    leftTitles: AxisTitles(
+                                      axisNameWidget: const Text(
+                                          'Blood Pressure (mmHg)',
+                                          style: TextStyle(fontSize: 12),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      axisNameSize: 30,
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        reservedSize: 30,
+                                        getTitlesWidget: (value, meta) {
+                                          return Text(
+                                            value.toInt().toString(),
+                                            style: const TextStyle(fontSize: 10),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    rightTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false)),
+                                    topTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false)),
                                   ),
+                                  borderData: FlBorderData(show: true),
+                                  gridData: FlGridData(show: true),
+                                  barGroups: filteredRecords
+                                      .asMap()
+                                      .entries
+                                      .map((entry) {
+                                    int index = entry.key;
+                                    BloodPressureRecord record = entry.value;
+                                    return BarChartGroupData(
+                                      x: index,
+                                      barRods: [
+                                        BarChartRodData(
+                                          toY: record.systolic.toDouble(),
+                                          color: record.color,
+                                          width: 10,
+                                        )
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
-                              );
-                            },
-                          )
+                              ),
+                            );
+                          },
+                        )
                       ],
                     ),
+                  ),
                   ),
                   const SizedBox(height: 12),
                   Padding(
