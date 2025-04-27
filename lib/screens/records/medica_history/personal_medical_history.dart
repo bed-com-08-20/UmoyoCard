@@ -4,9 +4,11 @@ import 'package:umoyocard/screens/records/medica_history/add_personal_medical_hi
 import 'dart:convert';
 
 class PersonalMedicalHistoryScreen extends StatefulWidget {
+  // ignore: use_super_parameters
   const PersonalMedicalHistoryScreen({Key? key}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _PersonalMedicalHistoryScreenState createState() =>
       _PersonalMedicalHistoryScreenState();
 }

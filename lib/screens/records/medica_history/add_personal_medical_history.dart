@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class AddPersonalMedicalRecordScreen extends StatefulWidget {
+  // ignore: use_super_parameters
   const AddPersonalMedicalRecordScreen({Key? key}) : super(key: key);
 
   @override
@@ -98,6 +99,7 @@ class _AddPersonalMedicalRecordScreenState
     await prefs.setStringList(key, storedRecords);
 
     // Close the screen and return the new record to the previous screen
+    // ignore: use_build_context_synchronously
     Navigator.pop(context, newRecord);
   }
 

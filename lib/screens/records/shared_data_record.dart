@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// ignore: use_key_in_widget_constructors
 class SharedDataRecordScreen extends StatelessWidget {
   final List<Map<String, String>> sharedData = [
     {
