@@ -55,8 +55,6 @@ class _OCRScreenState extends State<OCRScreen> {
     final prefs = await SharedPreferences.getInstance();
     final List<String> existingData = prefs.getStringList('bloodPressureReadings') ?? [];
     final existingRecords = await _getExistingBloodPressureData();
-    
-    // Parse the new reading (assuming format: "120/80 mmHg" or "Date: 01/01/23 - 120/80 mmHg")
     final newReading = _parseBloodPressureReading(bpData);
     
     // Check if this reading already exists
