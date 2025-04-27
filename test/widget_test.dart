@@ -10,8 +10,6 @@ void main() {
       initialRoute: '/login', // Provide the required parameter
     ));
 
-    // Since your app doesn't actually have a counter, you'll need to update
-    // these expectations to match your actual app's behavior
     expect(find.text('Welcome to UmoyoCard'), findsOneWidget);
     expect(find.byType(LoginScreen), findsOneWidget);
   });

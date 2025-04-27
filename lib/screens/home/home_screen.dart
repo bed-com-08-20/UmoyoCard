@@ -16,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final PageController _pageController = PageController();
 
   final List<Widget> _widgetOptions = <Widget>[
     HomeContent(),
@@ -27,32 +28,76 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedIndex = index;
     });
+
+    _pageController.animateToPage(
+      index,
+      duration: Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  // Function to get the AppBar based on the selected index
+  AppBar _getAppBar() {
+    String title = '';
+    List<Widget> actions = [];
+
+    switch (_selectedIndex) {
+      case 0:
+        title = 'Home';
+        actions = const [
+          ProfileHeader(),
+          SizedBox(width: 10),
+        ];
+        break;
+      case 1:
+        title = 'Records';
+        actions = const [
+          ProfileHeader(),
+          SizedBox(width: 10),
+        ];
+        break;
+      case 2:
+        title = 'Profile';
+
+        break;
+    }
+
+    return AppBar(
+      automaticallyImplyLeading: false,
+      centerTitle: true,
+      backgroundColor: Colors.teal, // Consistent background color
+      elevation: 0, // Consistent elevation
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      actions: actions, // Set actions based on the selected index
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _selectedIndex == 0
-          ? AppBar(
-              automaticallyImplyLeading: false,
-              centerTitle: true,
-              backgroundColor: Colors.teal,
-              elevation: 0,
-              title: Text(
-                'Home',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              actions: const [
-                ProfileHeader(),
-                SizedBox(width: 10),
-              ],
-            )
-          : null,
-      body: _widgetOptions.elementAt(_selectedIndex),
+      appBar: _getAppBar(), // Use the common AppBar function
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        children: _widgetOptions,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: _buildIcon(Icons.home, 0), label: ''),
@@ -115,17 +160,38 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class HomeContent extends StatelessWidget {
+class HomeContent extends StatefulWidget {
+  @override
+  _HomeContentState createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  String userName = "User";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName(); // Load the user's name when the screen starts
+  }
+
+  // Fetch the user's name from SharedPreferences
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userName = prefs.getString('userName') ?? "User";
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(4.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Hi Wadi Mkweza, welcome back!',
+              'Hi $userName, welcome back!', // Dynamic name display
               style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16.0),

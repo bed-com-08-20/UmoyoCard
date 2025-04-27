@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:umoyocard/screens/profile/profile_header.dart';
 import 'package:umoyocard/screens/records/dashboard_screen.dart';
 import 'package:umoyocard/screens/records/share_data.dart';
-import 'package:umoyocard/screens/records/shared_data_record.dart';
 import 'package:umoyocard/screens/records/timeline_screen.dart';
 
 class RecordScreen extends StatelessWidget {
@@ -10,24 +8,6 @@ class RecordScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        backgroundColor: Colors.teal,
-        elevation: 0,
-        title: const Text(
-          'Records',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        actions: const [
-          ProfileHeader(),
-          SizedBox(width: 10),
-        ],
-      ),
       body: SafeArea(
         child: Column(
           children: [
