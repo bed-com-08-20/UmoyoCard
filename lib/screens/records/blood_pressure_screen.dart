@@ -6,11 +6,11 @@ import 'package:share_plus/share_plus.dart';
 import 'package:umoyocard/screens/home/ocr_screen.dart';
 
 class BloodPressureRecord {
-  int systolic;
-  int diastolic;
-  DateTime date;
-  String category;
-  Color color;
+  final int systolic;
+  final int diastolic;
+  final DateTime date;
+  final String category;
+  final Color color;
 
   BloodPressureRecord({
     required this.systolic,
@@ -30,7 +30,7 @@ class BloodPressureRecord {
     };
   }
 
-  static BloodPressureRecord fromMap(Map<String, dynamic> map) {
+  factory BloodPressureRecord.fromMap(Map<String, dynamic> map) {
     return BloodPressureRecord(
       systolic: map['systolic'],
       diastolic: map['diastolic'],
@@ -43,41 +43,37 @@ class BloodPressureRecord {
   static String getCategory(int systolic, int diastolic) {
     if (systolic < 120 && diastolic < 80) return "Normal";
     if (systolic >= 120 && systolic < 130 && diastolic < 80) return "Elevated";
-    if ((systolic >= 130 && systolic < 140) ||
-        (diastolic >= 80 && diastolic < 90)) return "Hypertension Stage 1";
-    if (systolic >= 140 && systolic <= 180 ||
-        diastolic >= 90 && diastolic <= 120) return "Hypertension Stage 2";
+    if ((systolic >= 130 && systolic < 140) || (diastolic >= 80 && diastolic < 90)) return "Hypertension Stage 1";
+    if (systolic >= 140 && systolic <= 180 || diastolic >= 90 && diastolic <= 120) return "Hypertension Stage 2";
     if (systolic > 180 || diastolic > 120) return "Hypertensive Crisis";
     return "Not in range";
+  }
+   static Color getColorForCategory(String category) {
+    switch (category) {
+      case "Normal": return Colors.green;
+      case "Elevated": return Colors.blue;
+      case "Hypertension Stage 1": return Colors.orange;
+      case "Hypertension Stage 2": return Colors.red;
+      case "Hypertensive Crisis": return Colors.red[900]!;
+      default: return Colors.grey;
+    }
   }
 
   String get formattedDate {
     final monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec"
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     ];
     return "${date.day} ${monthNames[date.month - 1]} ${date.year}";
   }
 }
 
 class BloodPressureScreen extends StatefulWidget {
-  final String? ocrData;
-
-  const BloodPressureScreen({Key? key, this.ocrData}) : super(key: key);
-
-  const BloodPressureScreen.withData(this.ocrData, {Key? key}) : super(key: key);
+  // ignore: use_super_parameters
+  const BloodPressureScreen({Key? key}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _BloodPressureScreenState createState() => _BloodPressureScreenState();
 }
 
@@ -87,41 +83,25 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
   List<int> years = [];
+  
   final monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December"
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
   ];
 
   @override
   void initState() {
     super.initState();
     _loadRecords();
-    
-    if (widget.ocrData != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _processOCRData(widget.ocrData!);
-      });
-    }
   }
 
-  void _saveRecords() async {
+  Future<void> _saveRecords() async {
     final prefs = await SharedPreferences.getInstance();
-    List<String> recordsJson =
-        records.map((record) => jsonEncode(record.toMap())).toList();
+    List<String> recordsJson = records.map((record) => jsonEncode(record.toMap())).toList();
     prefs.setStringList('blood_pressure_records', recordsJson);
   }
 
-  void _loadRecords() async {
+  Future<void> _loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
     List<String>? recordsJson = prefs.getStringList('blood_pressure_records');
     if (recordsJson != null) {
@@ -198,67 +178,6 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
         "Date: ${record.formattedDate}";
 
     Share.share(text, subject: 'My Blood Pressure Record');
-  }
-
-  void _processOCRData(String data) {
-    final lines = data.split('\n');
-    final now = DateTime.now();
-    
-    for (var line in lines) {
-      line = line.trim();
-      if (line.isEmpty) continue;
-      
-      final dateRegex = RegExp(r'(\d{1,2}/\d{1,2}/\d{2,4})');
-      final readingRegex = RegExp(r'(\d{1,3})/(\d{1,3})\s*mmHg');
-      
-      final dateMatch = dateRegex.firstMatch(line);
-      final readingMatch = readingRegex.firstMatch(line);
-      
-      if (readingMatch != null) {
-        final systolic = int.tryParse(readingMatch.group(1)!) ?? 0;
-        final diastolic = int.tryParse(readingMatch.group(2)!) ?? 0;
-        
-        DateTime recordDate = now;
-        if (dateMatch != null) {
-          final dateParts = dateMatch.group(1)!.split('/');
-          recordDate = DateTime(
-            int.parse(dateParts[2].length == 2 ? '20${dateParts[2]}' : dateParts[2]),
-            int.parse(dateParts[1]),
-            int.parse(dateParts[0]),
-          );
-        }
-        
-        final category = BloodPressureRecord.getCategory(systolic, diastolic);
-        final color = category == "Normal"
-            ? Colors.green
-            : category == "Hypertension Stage 1"
-                ? Colors.orange
-                : category == "Hypertension Stage 2"
-                    ? Colors.black
-                    : category == "Hypertensive Crisis"
-                        ? Colors.red
-                        : Colors.blue;
-        
-        setState(() {
-          records.insert(0, BloodPressureRecord(
-            systolic: systolic,
-            diastolic: diastolic,
-            date: recordDate,
-            category: category,
-            color: color,
-          ));
-          _saveRecords();
-          _updateYearsList();
-          _filterRecords();
-        });
-      }
-    }
-    
-    if (records.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Blood pressure records added from scan')),
-      );
-    }
   }
 
   void _confirmDelete(int index) {
@@ -350,7 +269,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                       color: Colors.lightBlue[100],
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: SingleChildScrollView(
+                    child: SingleChildScrollView( 
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -359,6 +278,83 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                               style: TextStyle(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 12),
+                          SizedBox(
+                            height: 180,
+                            child: BarChart(
+                              BarChartData(
+                                alignment: BarChartAlignment.spaceAround,
+                                minY: 0,
+                                barTouchData: BarTouchData(enabled: true),
+                                titlesData: FlTitlesData(
+                                  show: true,
+                                  bottomTitles: AxisTitles(
+                                    axisNameWidget: const Padding(
+                                        padding: EdgeInsets.only(top: 8.0),
+                                        child: Text(
+                                          'Record number',
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                    axisNameSize: 30,
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      getTitlesWidget: (value, meta) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(top: 4.0),
+                                          child: Text(
+                                            '${value.toInt() + 1}',
+                                            style: const TextStyle(fontSize: 10),
+                                          ),
+                                        );
+                                      },
+                                      reservedSize: 30,
+                                    ),
+                                  ),
+                                  leftTitles: AxisTitles(
+                                    axisNameWidget: const Text(
+                                        'Blood Pressure (mmHg)',
+                                        style: TextStyle(fontSize: 12),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    axisNameSize: 30,
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 30,
+                                      getTitlesWidget: (value, meta) {
+                                        return Text(
+                                          value.toInt().toString(),
+                                          style: const TextStyle(fontSize: 10),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false)),
+                                  topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false)),
+                                ),
+                                borderData: FlBorderData(show: true),
+                                gridData: FlGridData(show: true),
+                                barGroups: filteredRecords
+                                    .asMap()
+                                    .entries
+                                    .map((entry) {
+                                  int index = entry.key;
+                                  BloodPressureRecord record = entry.value;
+                                  return BarChartGroupData(
+                                    x: index,
+                                    barRods: [
+                                      BarChartRodData(
+                                        toY: record.systolic.toDouble(),
+                                        color: record.color,
+                                        width: 10,
+                                      )
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
                         ],
                         if (filteredRecords.isEmpty)
                           const Padding(
@@ -368,95 +364,9 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                               style: TextStyle(fontSize: 16),
                             ),
                           )
-                        else
-                           LayoutBuilder(
-                          builder: (context, constraints) {
-                            // Calculate a responsive height based on screen size
-                            final chartHeight = constraints.maxHeight > 600 ? 180.0 : 150.0;
-
-                            return Container(
-                              height: chartHeight,
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: BarChart(
-                                BarChartData(
-                                  alignment: BarChartAlignment.spaceAround,
-                                  minY: 0,    // Set minimum Y value
-                                  barTouchData: BarTouchData(enabled: true),
-                                  titlesData: FlTitlesData(
-                                    show: true,
-                                    bottomTitles: AxisTitles(
-                                      axisNameWidget: const Padding(
-                                          padding: EdgeInsets.only(top: 8.0),
-                                          child: Text(
-                                            'Record number',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ),
-                                      axisNameSize: 30,
-                                      sideTitles: SideTitles(
-                                        showTitles: true,
-                                        getTitlesWidget: (value, meta) {
-                                          return Padding(
-                                            padding: const EdgeInsets.only(top: 4.0),
-                                            child: Text(
-                                              '${value.toInt() + 1}',
-                                              style: const TextStyle(fontSize: 10),
-                                            ),
-                                          );
-                                        },
-                                        reservedSize: 30, // Reserve space for bottom titles
-                                      ),
-                                    ),
-                                    leftTitles: AxisTitles(
-                                      axisNameWidget: const Text(
-                                          'Blood Pressure (mmHg)',
-                                          style: TextStyle(fontSize: 12),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      axisNameSize: 30,
-                                      sideTitles: SideTitles(
-                                        showTitles: true,
-                                        reservedSize: 30,
-                                        getTitlesWidget: (value, meta) {
-                                          return Text(
-                                            value.toInt().toString(),
-                                            style: const TextStyle(fontSize: 10),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    rightTitles: const AxisTitles(
-                                      sideTitles: SideTitles(showTitles: false)),
-                                    topTitles: const AxisTitles(
-                                      sideTitles: SideTitles(showTitles: false)),
-                                  ),
-                                  borderData: FlBorderData(show: true),
-                                  gridData: FlGridData(show: true),
-                                  barGroups: filteredRecords
-                                      .asMap()
-                                      .entries
-                                      .map((entry) {
-                                    int index = entry.key;
-                                    BloodPressureRecord record = entry.value;
-                                    return BarChartGroupData(
-                                      x: index,
-                                      barRods: [
-                                        BarChartRodData(
-                                          toY: record.systolic.toDouble(),
-                                          color: record.color,
-                                          width: 10,
-                                        )
-                                      ],
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            );
-                          },
-                        )
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   ),
                   const SizedBox(height: 12),
                   Padding(

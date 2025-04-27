@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/records/medica_history/personal_medical_history.dart';
 
 class HealthInsightsScreen extends StatelessWidget {
+  // ignore: use_super_parameters
   const HealthInsightsScreen({Key? key}) : super(key: key);
 
   @override
