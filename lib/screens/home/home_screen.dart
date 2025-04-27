@@ -345,15 +345,17 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
         ),
         padding: EdgeInsets.all(8.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.timeline, size: 20, color: Colors.blue),
                 SizedBox(width: 5),
                 Text(
-                  "Latest Visit",
+                  "Latest Hospital Visit",
                   style: TextStyle(
                     fontSize: 14.0,
                     fontWeight: FontWeight.bold,
@@ -362,17 +364,38 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
                 ),
               ],
             ),
-            SizedBox(height: 8.0),
-            Text(
-              _date.isNotEmpty
-                  ? "Here is your latest hospital visit:\n$_date"
-                  : "No recent visits found",
-              style: TextStyle(
-                fontSize: 13.0,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
+            SizedBox(height: 16.0),
+            if (_date.isNotEmpty) ...[
+              Text(
+                "Here is your latest hospital visit:",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13.0,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
               ),
-            ),
+              SizedBox(height: 8.0),
+              Text(
+                _date,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13.0,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ] else ...[
+              Text(
+                "No recent visits found",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13.0,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+            ]
           ],
         ),
       ),
