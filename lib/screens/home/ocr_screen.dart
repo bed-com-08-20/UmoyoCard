@@ -48,7 +48,7 @@ class _OCRScreenState extends State<OCRScreen> {
       case "Hypertension Stage 1":
         return Colors.orange;
       case "Hypertension Stage 2":
-        return Colors.red;
+        return Colors.black;
       case "Hypertensive Crisis":
         return Colors.red[900]!;
       default:

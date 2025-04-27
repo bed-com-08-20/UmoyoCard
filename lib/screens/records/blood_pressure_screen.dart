@@ -26,6 +26,7 @@ class BloodPressureRecord {
       'diastolic': diastolic,
       'date': date.toIso8601String(),
       'category': category,
+      // ignore: deprecated_member_use
       'color': color.value,
     };
   }
@@ -53,7 +54,7 @@ class BloodPressureRecord {
       case "Normal": return Colors.green;
       case "Elevated": return Colors.blue;
       case "Hypertension Stage 1": return Colors.orange;
-      case "Hypertension Stage 2": return Colors.red;
+      case "Hypertension Stage 2": return Colors.black;
       case "Hypertensive Crisis": return Colors.red[900]!;
       default: return Colors.grey;
     }
@@ -177,6 +178,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
         "Category: ${record.category}\n"
         "Date: ${record.formattedDate}";
 
+    // ignore: deprecated_member_use
     Share.share(text, subject: 'My Blood Pressure Record');
   }
 
