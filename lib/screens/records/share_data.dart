@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:umoyocard/screens/patient_details.dart';
 import 'package:umoyocard/services/fhir_service.dart';
 
 class SharedDataRecord extends StatefulWidget {
@@ -744,6 +745,21 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
               },
             )
         ],
+        leading: IconButton(
+            onPressed: () async {
+              String currentPatientId;
+                
+              currentPatientId = '7a130beb-fa9a-4f80-88cf-fda667550625';
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        PatientDetailsScreen(patientId: currentPatientId),
+                  ),
+                );
+              
+            },
+            icon: Icon(Icons.view_list_sharp)),
       ),
       body: SafeArea(
         child: Column(
