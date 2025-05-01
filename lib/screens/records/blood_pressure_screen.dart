@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:umoyocard/screens/home/ocr_screen.dart';
 
 class BloodPressureRecord {
   final int systolic;
@@ -95,13 +93,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
     super.initState();
     _loadRecords();
   }
-
-  Future<void> _saveRecords() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> recordsJson = records.map((record) => jsonEncode(record.toMap())).toList();
-    prefs.setStringList('blood_pressure_records', recordsJson);
-  }
-
+  
   Future<void> _loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
     List<String>? recordsJson = prefs.getStringList('blood_pressure_records');
@@ -171,47 +163,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
       _filterRecords();
     });
   }
-
-  void _shareRecord(BloodPressureRecord record) {
-    final text = "Blood Pressure Record:\n"
-        "${record.systolic}/${record.diastolic} mmHg\n"
-        "Category: ${record.category}\n"
-        "Date: ${record.formattedDate}";
-
-    // ignore: deprecated_member_use
-    Share.share(text, subject: 'My Blood Pressure Record');
-  }
-
-  void _confirmDelete(int index) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Confirm Deletion"),
-          content: const Text("Are you sure you want to delete this record?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  records.removeAt(index);
-                  _saveRecords();
-                  _updateYearsList();
-                  _filterRecords();
-                });
-                Navigator.pop(context);
-              },
-              child: const Text("Delete"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -219,19 +171,6 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
         title: const Text('Blood Pressure', style: TextStyle(color: Colors.blue)),
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.black),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.camera_alt),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const OCRScreen(),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -386,7 +325,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                               )
                             ]
                           : filteredRecords.map((record) {
-                              int originalIndex = records.indexWhere((r) =>
+                              records.indexWhere((r) =>
                                   r.date == record.date &&
                                   r.systolic == record.systolic &&
                                   r.diastolic == record.diastolic);
@@ -400,25 +339,6 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                                       "${record.systolic}/${record.diastolic} mmHg"),
                                   subtitle: Text(
                                       "${record.category}\n${record.formattedDate}"),
-                                  trailing: PopupMenuButton<int>(
-                                    onSelected: (value) {
-                                      if (value == 0) {
-                                        _confirmDelete(originalIndex);
-                                      } else if (value == 1) {
-                                        _shareRecord(record);
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                        value: 0,
-                                        child: Text("Delete"),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 1,
-                                        child: Text("Share"),
-                                      ),
-                                    ],
-                                  ),
                                 ),
                               );
                             }).toList(),
@@ -426,26 +346,6 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                   ),
                 ],
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const OCRScreen(),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              child: const Text("Scan Blood Pressure", style: TextStyle(fontSize: 18)),
             ),
           ),
         ],
