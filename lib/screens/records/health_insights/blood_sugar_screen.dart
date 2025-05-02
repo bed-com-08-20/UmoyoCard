@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
 
 class BloodSugarScreen extends StatefulWidget {
@@ -21,7 +20,63 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
   @override
   void initState() {
     super.initState();
-    _loadRecords();
+    _loadInitialData();
+  }
+
+  Future<List<Map<String, dynamic>>> fetchBloodSugarDataFromTimeline() async {
+    final prefs = await SharedPreferences.getInstance();
+    final timelineTexts = prefs.getStringList('savedTexts') ?? [];
+    final timelineDates = prefs.getStringList('savedDates') ?? [];
+    print('Timeline Texts: $timelineTexts'); // Print the entire list
+  print('Timeline Dates: $timelineDates');
+    List<Map<String, dynamic>> bloodSugarReadings = [];
+
+    // Updated regex to include "blood sugar", "sugar", "glucose", "BG", "BGL"
+    final bloodSugarRegex = RegExp(
+      r'(blood\s*sugar|sugar|glucose|BG|BGL)[:\s]*(\d+\.?\d*)',
+      caseSensitive: false,
+    );
+
+    for (int i = 0; i < timelineTexts.length; i++) {
+      final text = timelineTexts[i];
+      final match = bloodSugarRegex.firstMatch(text);
+      if (match != null && i < timelineDates.length) {
+        final value = double.tryParse(match.group(2) ?? ''); 
+        final dateString = timelineDates[i];
+        if (value != null) {
+          bloodSugarReadings.add({
+            'value': value,
+            'date': dateString,
+          });
+        }
+      }
+    }
+    print('Blood Sugar Readings from Timeline: $bloodSugarReadings');
+    return bloodSugarReadings;
+  }
+
+
+  Future<void> _loadInitialData() async {
+    // Load blood sugar records saved directly by this screen
+    await _loadRecords();
+    // Fetch blood sugar data from the timeline
+    final timelineData = await fetchBloodSugarDataFromTimeline();
+    // Integrate the timeline data into your records list
+    setState(() {
+      // Add the timeline data to the existing records
+      records.addAll(timelineData);
+       print('Records after adding timeline data: $records');
+      // Ensure all records have a 'status' and 'timestamp' if they don't
+      records = records.map((record) {
+        record['timestamp'] ??= DateTime.parse(record['date']).millisecondsSinceEpoch;
+        record['status'] ??= _determineStatus(record['value']);
+        return record;
+      }).toList();
+      // Sort the combined records by date
+      records.sort((a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int));
+      _updateAvailableMonths();
+      _saveRecords(); // Save the combined data if needed
+    });
   }
 
   void _saveRecords() async {
@@ -44,7 +99,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     });
   }
 
-  void _loadRecords() async {
+  Future<void> _loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
     String? savedData = prefs.getString('blood_sugar_records');
     if (savedData != null) {
@@ -103,7 +158,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: _getStatusColor(record['status']),
+              backgroundColor: _getStatusColor(record['status'] ?? _determineStatus(record['value'])),
               radius: 15,
             ),
             SizedBox(width: 12),
@@ -115,238 +170,20 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 5),
-                Text(record['status']),
+                Text(record['status'] ?? _determineStatus(record['value'])),
                 SizedBox(height: 5),
                 Text(_formatDateTime(record['date'])),
               ],
             ),
-            Spacer(),
-            _buildEllipsisMenu(index),
           ],
         ),
       ),
     );
   }
 
-  void _deleteRecord(int index) {
-    setState(() {
-      records.removeAt(index);
-      _saveRecords();
-      _updateAvailableMonths();
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Record deleted successfully!')),
-    );
-  }
-
-  void _confirmDeleteRecord(int index) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Confirm Deletion'),
-        content: Text('Are you sure you want to delete this record?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              _deleteRecord(index);
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text('Yes, Delete', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  bool _isEditingAllowed(int index) {
-    if (index >= records.length) return false;
-    final record = records[index];
-    final creationTime =
-        DateTime.fromMillisecondsSinceEpoch(record['timestamp'] ?? 0);
-    final currentTime = DateTime.now();
-    return currentTime.difference(creationTime).inMinutes <= 3;
-  }
-
   String _formatDateTime(String isoString) {
     final dateTime = DateTime.parse(isoString).toLocal();
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-  }
-
-  void _shareRecord(int index) {
-    if (index >= records.length) return;
-
-    final record = records[index];
-    final dateTime = DateTime.parse(record['date']).toLocal();
-    final formattedDate =
-        '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-
-    final shareText = '''
-      Blood Sugar Record:
-      - Blood sugar: ${record['value']} mmol/L
-      - Status: ${record['status']}
-      - Date and Time: $formattedDate
-      ''';
-
-    Share.share(shareText);
-  }
-
-  Widget _buildEllipsisMenu(int index) {
-    final canEdit = _isEditingAllowed(index);
-
-    return PopupMenuButton<String>(
-      onSelected: (value) {
-        if (value == 'edit' && canEdit) {
-          _showEditRecordDialog(index);
-        } else if (value == 'delete' && canEdit) {
-          _confirmDeleteRecord(index);
-        } else if (value == 'share') {
-          _shareRecord(index);
-        } else if (!canEdit) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text('Editing allowed only within 5 minutes of creation')),
-          );
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'share',
-          height: 40,
-          child: Text('Share'),
-        ),
-        PopupMenuItem(
-            value: 'edit',
-            enabled: canEdit,
-            height: 40,
-            child: Text(
-              'Edit',
-              style: TextStyle(
-                color: canEdit ? null : Colors.grey,
-              ),
-            )),
-        PopupMenuItem(
-            value: 'delete',
-            enabled: canEdit,
-            height: 40,
-            child: Text(
-              'Delete',
-              style: TextStyle(
-                color: canEdit ? null : Colors.grey,
-              ),
-            )),
-      ],
-    );
-  }
-
-  void _showEditRecordDialog(int index) {
-    TextEditingController valueController =
-        TextEditingController(text: records[index]['value'].toString());
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Edit Record'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: valueController,
-                keyboardType: TextInputType.number,
-                decoration:
-                    InputDecoration(labelText: 'Blood Sugar Level (mmol/L)'),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              double newValue = double.tryParse(valueController.text) ?? 0.0;
-
-              try {
-                String newStatus = _determineStatus(newValue);
-
-                setState(() {
-                  records[index]['value'] = newValue;
-                  records[index]['status'] = newStatus;
-                  _saveRecords();
-                });
-
-                Navigator.pop(context);
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(
-                          'Invalid value! Please enter a valid blood sugar level.')),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-            child: Text('Save', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddRecordDialog() {
-    TextEditingController valueController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Add Record'),
-        content: TextField(
-          controller: valueController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(labelText: 'Blood Sugar Level (mmol/L)'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              double value = double.tryParse(valueController.text) ?? 0.0;
-
-              try {
-                String status = _determineStatus(value);
-
-                setState(() {
-                  records.insert(0, {
-                    'value': value,
-                    'status': status,
-                    'date': DateTime.now().toLocal().toString(),
-                    'timestamp': DateTime.now().millisecondsSinceEpoch,
-                  });
-                  _saveRecords();
-                  _updateAvailableMonths();
-                });
-                Navigator.pop(context);
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                        'Invalid value! Please enter a valid blood sugar level. ')));
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-            child: Text('Add', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildBarChart(List<Map<String, dynamic>> displayRecords) {
@@ -371,42 +208,43 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                 baselineY: 0,
                 alignment: BarChartAlignment.spaceAround,
                 titlesData: FlTitlesData(
-                    show: true,
-                    leftTitles: AxisTitles(
-                      axisNameWidget: const Text("Blood sugar (mmol/L)"),
-                      axisNameSize: 30,
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 5,
-                        maxIncluded: true,
-                        minIncluded: true,
-                        getTitlesWidget: (value, meta) =>
-                            Text(value.toInt().toString()),
-                      ),
-                    ),
-                    rightTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                      showTitles: false,
+                  show: true,
+                  leftTitles: AxisTitles(
+                    axisNameWidget: const Text("Blood sugar (mmol/L)"),
+                    axisNameSize: 30,
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 5,
                       maxIncluded: true,
                       minIncluded: true,
-                    )),
-                    topTitles: AxisTitles(
-                        axisNameWidget: const Text("Blood Sugar Graph"),
-                        axisNameSize: 35,
-                        sideTitles: SideTitles(
-                          showTitles: false,
-                          getTitlesWidget: (value, meta) =>
-                              Text("Blood sugar Graph"),
-                        )),
-                    bottomTitles: AxisTitles(
-                        axisNameWidget: const Text("Number of records"),
-                        axisNameSize: 25,
-                        sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 30,
-                            getTitlesWidget: (value, meta) {
-                              return Text((value + 1).toInt().toString());
-                            }))),
+                      getTitlesWidget: (value, meta) =>
+                          Text(value.toInt().toString()),
+                    ),
+                  ),
+                  rightTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                    showTitles: false,
+                    maxIncluded: true,
+                    minIncluded: true,
+                  )),
+                  topTitles: AxisTitles(
+                      axisNameWidget: const Text("Blood Sugar Graph"),
+                      axisNameSize: 35,
+                      sideTitles: SideTitles(
+                        showTitles: false,
+                        getTitlesWidget: (value, meta) =>
+                            Text("Blood sugar Graph"),
+                      )),
+                  bottomTitles: AxisTitles(
+                      axisNameWidget: const Text("Number of records"),
+                      axisNameSize: 25,
+                      sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          getTitlesWidget: (value, meta) {
+                            return Text((value + 1).toInt().toString());
+                          })),
+                ),
                 borderData: FlBorderData(show: true),
                 barGroups: displayRecords.asMap().entries.map((entry) {
                   return BarChartGroupData(
@@ -414,7 +252,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                     barRods: [
                       BarChartRodData(
                         toY: entry.value['value'],
-                        color: _getStatusColor(entry.value['status']),
+                        color: _getStatusColor(entry.value['status'] ?? _determineStatus(entry.value['value'])),
                         width: 18,
                         borderRadius: BorderRadius.circular(5),
                         borderSide: BorderSide(
@@ -433,13 +271,6 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
               ),
             ),
     );
-  }
-
-  Widget _buildLatestRecordCard() {
-    if (records.isEmpty) {
-      return Text("No records available yet.");
-    }
-    return _buildRecordCard(records[0], 0);
   }
 
   int _compareMonths(String a, String b) {
@@ -547,32 +378,11 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                 _buildMonthNavigationHeader(),
                 _buildBarChart(currentMonthRecords),
                 SizedBox(height: 10),
-                // if (records.isNotEmpty &&
-                //     DateTime.parse(records[0]['date']).month ==
-                //         _currentViewDate.month &&
-                //     DateTime.parse(records[0]['date']).year ==
-                //         _currentViewDate.year)
-                // _buildLatestRecordCard(),
               ],
             ),
           ),
-
           _buildPreviousRecordsList(),
           SizedBox(height: 10),
-
-          // Add Record Button
-          Container(
-            padding: EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: _showAddRecordDialog,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                minimumSize: Size(double.infinity, 50),
-              ),
-              child:
-                  Text('+ Add Record', style: TextStyle(color: Colors.white)),
-            ),
-          ),
         ],
       ),
     );

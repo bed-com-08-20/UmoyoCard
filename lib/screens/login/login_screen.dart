@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:umoyocard/screens/home/home_screen.dart';
 import 'package:umoyocard/screens/login/create_account.dart';
+import 'package:umoyocard/screens/login/forget_password.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -134,10 +135,9 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 10.0),
               TextButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text(
-                            'Forgot Password Screen not yet implemented!')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ForgetPasswordScreen()),
                   );
                 },
                 child: const Text(
