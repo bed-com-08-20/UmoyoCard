@@ -1,41 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:umoyocard/screens/login/login_screen.dart';
 
 class PasswordProvider extends ChangeNotifier {
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
-  
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
+
   String? passwordError;
   String? confirmPasswordError;
+  String? email;
+  String? phone;
+  String? fullName;
+  String? userId; // Will be passed from CreateAccountForm
 
   final FocusNode passwordFocusNode = FocusNode();
   final FocusNode confirmPasswordFocusNode = FocusNode();
 
   PasswordProvider() {
-    passwordController.addListener(() {
-      _validatePasswords();
-    });
-
-    confirmPasswordController.addListener(() {
-      _validatePasswords();
-    });
-
+    passwordController.addListener(_validatePasswords);
+    confirmPasswordController.addListener(_validatePasswords);
     passwordFocusNode.addListener(() {
-      if (!passwordFocusNode.hasFocus) {
-        _validatePasswords();
-      }
+      if (!passwordFocusNode.hasFocus) _validatePasswords();
     });
-
     confirmPasswordFocusNode.addListener(() {
-      if (!confirmPasswordFocusNode.hasFocus) {
-        _validatePasswords();
-      }
+      if (!confirmPasswordFocusNode.hasFocus) _validatePasswords();
     });
   }
 
   String? _getPasswordError(String password) {
-    if (password.length < 6) return "Password must be at least 6 characters long";
-    if (!password.contains(RegExp(r'[A-Z]'))) return "Password must contain at least one uppercase letter";
-    if (!password.contains(RegExp(r'[0-9]'))) return "Password must contain at least one number";
+    if (password.length < 6) {
+      return "Password must be at least 6 characters long";
+    }
+    if (!password.contains(RegExp(r'[A-Z]'))) {
+      return "Password must contain at least one uppercase letter";
+    }
+    if (!password.contains(RegExp(r'[0-9]'))) {
+      return "Password must contain at least one number";
+    }
     return null;
   }
 
@@ -45,42 +47,59 @@ class PasswordProvider extends ChangeNotifier {
   }
 
   void _validatePasswords() {
-    String password = passwordController.text.trim();
-    String confirmPassword = confirmPasswordController.text.trim();
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
 
-    passwordError = null;
-    confirmPasswordError = null;
-
-    
-    if (password.isNotEmpty) {
-      passwordError = _getPasswordError(password);
-    }
-
-    if (confirmPassword.isNotEmpty) {
-      confirmPasswordError = _getConfirmPasswordError(password, confirmPassword);
-    }
+    passwordError = password.isEmpty ? null : _getPasswordError(password);
+    confirmPasswordError = confirmPassword.isEmpty
+        ? null
+        : _getConfirmPasswordError(password, confirmPassword);
 
     notifyListeners();
   }
 
-  Future<void> savePasswordToFirebase() async {
-    String password = passwordController.text.trim();
-    String confirmPassword = confirmPasswordController.text.trim();
+  Future<void> savePasswordToSharedPrefs(BuildContext context) async {
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
 
     if (password.isEmpty) {
       passwordError = "Password cannot be empty";
       notifyListeners();
-      return; 
+      return;
     }
     if (confirmPassword.isEmpty) {
       confirmPasswordError = "Confirm Password cannot be empty";
       notifyListeners();
-      return; 
+      return;
     }
 
-    if (passwordError == null && confirmPasswordError == null) {
-      
+    _validatePasswords();
+    if (passwordError != null || confirmPasswordError != null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+
+    // Use the userId that was passed from CreateAccountForm
+    if (userId == null || userId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error: Missing user ID")),
+      );
+      return;
     }
+
+    await Future.wait([
+      prefs.setString('userId', userId!),
+      prefs.setString('userName', fullName ?? ''),
+      prefs.setString('email', email ?? ''),
+      prefs.setString('phone', phone ?? ''),
+      prefs.setString('password', password),
+      prefs.setBool('isLoggedIn', true),
+    ]);
+
+    Navigator.pushReplacement(
+      // ignore: use_build_context_synchronously
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+    );
   }
 
   @override

@@ -12,6 +12,12 @@
 .swiftpm/
 migrate_working_dir/
 
+# VS Code related
+.vscode/
+
+#firbase
+lib/firebase/firebase_options.dart
+
 # IntelliJ related
 *.iml
 *.ipr
@@ -45,4 +51,7 @@ app.*.map.json
 /android/app/release
 /android/app/.cxx/    # Ignore C++ build cache files
 /android/app/build/    # Ignore Gradle build files
+
+#.env
+.env
 

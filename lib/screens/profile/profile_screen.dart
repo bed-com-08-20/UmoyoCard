@@ -9,20 +9,6 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Profile',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.blueAccent,
-          ),
-        ),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -49,16 +35,15 @@ class ProfileScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const UpdatePersonalInfoScreen(),
-                ),
+                    builder: (context) => const UpdatePersonalInfoScreen()),
               );
             }),
+
             _buildListTile('Change Password', Icons.lock, () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ChangePasswordScreen(),
-                ),
+                    builder: (context) => const ChangePasswordScreen()),
               );
             }),
 
@@ -71,7 +56,7 @@ class ProfileScreen extends StatelessWidget {
             _buildListTile('Privacy Policy', Icons.privacy_tip, () {}),
             _buildListTile('Contact Us', Icons.contact_mail, () {}),
             _buildListTile('FAQ', Icons.help, () {}),
-            _buildListTile('About UmoyoKhadi', Icons.info, () {}),
+            _buildListTile('About UmoyoCard', Icons.info, () {}),
 
             const SizedBox(height: 16.0),
 

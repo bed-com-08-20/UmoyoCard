@@ -4,8 +4,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:umoyocard/screens/records/blood_pressure_screen.dart';
-import 'dart:convert';
 
 class OCRScreen extends StatefulWidget {
   const OCRScreen({super.key});
@@ -31,87 +29,48 @@ class _OCRScreenState extends State<OCRScreen> {
     );
   }
 
+  // Save record to SharedPreferences
+  Future<void> _saveRecord() async {
+    if (_extractedText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No text extracted to save!')),
+      );
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    List<String> savedTexts = prefs.getStringList('savedTexts') ?? [];
+    List<String> savedImages = prefs.getStringList('savedImages') ?? [];
+    List<String> savedDates = prefs.getStringList('savedDates') ?? [];
+
+    savedTexts.add(_extractedText);
+    if (_imageFile != null) {
+      savedImages.add(_imageFile!.path);
+    }
+    savedDates.add(DateTime.now().toIso8601String());
+
+    await prefs.setStringList('savedTexts', savedTexts);
+    await prefs.setStringList('savedImages', savedImages);
+    await prefs.setStringList('savedDates', savedDates);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Health record saved successfully!')),
+    );
+
+    setState(() {
+      _extractedText = '';
+      _imageFile = null;
+    });
+
+    Navigator.of(context).pop();
+  }
+
   Future<String> saveImageLocally(File image) async {
     final directory = await getApplicationDocumentsDirectory();
     final imagePath =
         '${directory.path}/prescription_${DateTime.now().millisecondsSinceEpoch}.jpg';
     await image.copy(imagePath);
     return imagePath;
-  }
-
-  Color _getColorForCategory(String category) {
-    switch (category) {
-      case "Normal":
-        return Colors.green;
-      case "Elevated":
-        return Colors.blue;
-      case "Hypertension Stage 1":
-        return Colors.orange;
-      case "Hypertension Stage 2":
-        return Colors.black;
-      case "Hypertensive Crisis":
-        return Colors.red[900]!;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Future<void> _saveBloodPressureData(String bpLine) async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Parse date (optional) and BP reading
-    final dateRegex = RegExp(r'(\d{1,2}/\d{1,2}/\d{2,4})');
-    final readingRegex = RegExp(r'(\d{1,3})/(\d{1,3})\s*mmHg');
-    
-    final dateMatch = dateRegex.firstMatch(bpLine);
-    final readingMatch = readingRegex.firstMatch(bpLine);
-    
-    if (readingMatch == null) {
-      debugPrint("No valid BP reading found in line: $bpLine");
-      return;
-    }
-    
-    final systolic = int.tryParse(readingMatch.group(1)!) ?? 0;
-    final diastolic = int.tryParse(readingMatch.group(2)!) ?? 0;
-    
-    // Default to current date if no date in the line
-    DateTime recordDate = DateTime.now();
-    if (dateMatch != null) {
-      final dateParts = dateMatch.group(1)!.split('/');
-      recordDate = DateTime(
-        int.parse(dateParts[2].length == 2 ? '20${dateParts[2]}' : dateParts[2]),
-        int.parse(dateParts[1]),
-        int.parse(dateParts[0]),
-      );
-    }
-    
-    final category = _getCategory(systolic, diastolic);
-    final color = _getColorForCategory(category);
-    
-    // Create and save the record
-    final record = {
-      'systolic': systolic,
-      'diastolic': diastolic,
-      'date': recordDate.toIso8601String(),
-      'category': category,
-      // ignore: deprecated_member_use
-      'color': color.value,
-    };
-    
-    // Get existing records and add new one
-    final recordsJson = prefs.getStringList('blood_pressure_records') ?? [];
-    recordsJson.add(jsonEncode(record));
-    await prefs.setStringList('blood_pressure_records', recordsJson);
-    debugPrint('Saved BP record: $record');
-  }
-
-  String _getCategory(int systolic, int diastolic) {
-    if (systolic < 120 && diastolic < 80) return "Normal";
-    if (systolic >= 120 && systolic < 130 && diastolic < 80) return "Elevated";
-    if ((systolic >= 130 && systolic < 140) ||  (diastolic >= 80 && diastolic < 90)) return "Hypertension Stage 1";
-    if (systolic >= 140 || diastolic >= 90) return "Hypertension Stage 2";
-    if (systolic > 180 || diastolic > 120) return "Hypertensive Crisis";
-    return "Not in range";
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -124,7 +83,6 @@ class _OCRScreenState extends State<OCRScreen> {
       setState(() {
         _imageFile = File(savedPath);
         _isProcessing = true;
-        _extractedText = '';
       });
 
       await _processOCR(_imageFile!);
@@ -135,109 +93,55 @@ class _OCRScreenState extends State<OCRScreen> {
     }
   }
 
+  // Use Gemini API to process OCR and enhance text
   Future<void> _processOCR(File imageFile) async {
     try {
       final imageBytes = await imageFile.readAsBytes();
 
       final prompt = '''
-You are a skilled medical assistant. Extract ALL blood pressure readings from this document.
-
-Please follow these guidelines carefully:
+You are a skilled medical assistant. Carefully extract and correct all relevant medical information from the image of a health passport page. The page may contain handwritten or printed notes.
+Guidelines: Please follow these guidelines carefully
 - If a section is not present in the image, skip it.
-- Focus on extracting exactly what is written, but make corrections to spelling, grammar, or formatting for clarity.
-- Do not guess or hallucinate information; only extract what can be identified.
+- Focus on **extracting exactly what is written**, but make corrections to spelling, grammar, or formatting for clarity.
+- **Do not guess or hallucinate information**; only extract what can be identified.
 - Present the result in a clean, readable, and structured format using labeled sections or bullet points.
-- Do NOT use Markdown (e.g., **bold** or code style).
+- Do NOT use Markdown (e.g., **bold** or `code` style).
 - The structure should make sense to a healthcare worker or patient reading it.
-- Do NOT include explanations, summaries, or irrelevant details—only the cleaned and structured medical data.
+- **Do NOT include explanations, summaries, or irrelevant details**—only the cleaned and structured medical data.
 
-Return the blood pressure readings in this exact format:
-[date if available in DD/MM/YYYY format] [systolic]/[diastolic] mmHg
-[date if available] [systolic]/[diastolic] mmHg
-...
+Always ensure the information is medically accurate and properly formatted for clarity and future digital record-keeping.
 
-Example outputs:
-12/05/2023 120/80 mmHg
-15/05/2023 130/85 mmHg
-140/90 mmHg  (when no date is available)
+Identify and organize the following fields if they are present:
 
-If no blood pressure readings are found, return exactly: "No blood pressure readings detected"
-
-Other Medical Information:
-- Date: [date]
-- Condition: [condition]
-- Medication: [medication]
-- Dosage: [dosage]
-- Instructions: [instructions]
-- Doctor/Hospital: [doctor/hospital]
-- Patient: [patient info]
-- Symptoms: [symptoms]
-
+1. Date(s) — Format as dd/mm/yy
+2. Medical Condition(s) or Diagnosis
+3. Medication Name(s)
+4. Dosage and Frequency
+5. Administration Instructions
+6. Doctor or Hospital Name
+7. Patient Information (Name, Age, etc.)
+8. Signs, symptoms, or Observations
 ''';
 
-      final content = Content.multi([
-        DataPart('image/jpeg', imageBytes),
-        TextPart(prompt),
-      ]);
+      final content = Content(
+        'user',
+        [
+          DataPart('image/jpeg', imageBytes),
+          TextPart(prompt),
+        ],
+      );
 
       final response = await _geminiModel.generateContent([content]);
-      final extractedText = response.text ?? "No text extracted or recognized.";
-      
+
       setState(() {
-        _extractedText = extractedText;
+        _extractedText = response.text ?? "No text extracted or recognized.";
       });
-
-      if (extractedText.contains("No blood pressure readings detected")) {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No blood pressure readings found')),
-        );
-        return;
-      }
-
-      // Process each line separately
-      final lines = extractedText.split('\n');
-      int addedCount = 0;
-
-      for (final line in lines) {
-        final trimmedLine = line.trim();
-        if (trimmedLine.isEmpty) continue;
-
-        try {
-          await _saveBloodPressureData(trimmedLine);
-          addedCount++;
-        } catch (e) {
-          debugPrint("Failed to process line: $trimmedLine. Error: $e");
-        }
-      }
-
-      if (addedCount > 0) {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Successfully added $addedCount blood pressure records')),
-        );
-        Navigator.pushReplacement(
-          // ignore: use_build_context_synchronously
-          context,
-          MaterialPageRoute(
-            builder: (context) => const BloodPressureScreen(),
-          ),
-        );
-      } else {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No valid blood pressure readings found')),
-        );
-      }
     } catch (e) {
       debugPrint("Gemini OCR Error: $e");
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to process image. Please try again.')),
+        const SnackBar(
+            content: Text('Failed to process image. Please try again.')),
       );
-      setState(() {
-        _isProcessing = false;
-      });
     }
   }
 
@@ -246,14 +150,15 @@ Other Medical Information:
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.teal,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Medical Document Scan',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.blueAccent,
+            color: Colors.white,
           ),
         ),
       ),
@@ -271,19 +176,15 @@ Other Medical Information:
               if (_isProcessing)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16.0),
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text("Processing document..."),
-                    ],
+                  child: Center(
+                    child: CircularProgressIndicator(),
                   ),
                 )
               else ...[
                 ElevatedButton.icon(
                   onPressed: () => _pickImage(ImageSource.camera),
                   icon: const Icon(Icons.camera_alt),
-                  label: const Text("Take Photo"),
+                  label: const Text("Scan Prescription"),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
@@ -300,19 +201,12 @@ Other Medical Information:
               ],
               if (_imageFile != null) ...[
                 const SizedBox(height: 16.0),
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Image.file(_imageFile!, fit: BoxFit.contain),
-                ),
+                Image.file(_imageFile!, height: 150, fit: BoxFit.cover),
               ],
               if (_extractedText.isNotEmpty) ...[
                 const SizedBox(height: 24.0),
                 const Text(
-                  "Extracted Data",
+                  "Extracted Prescription",
                   style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16.0),
@@ -327,6 +221,15 @@ Other Medical Information:
                     _extractedText,
                     style: const TextStyle(fontSize: 16.0),
                   ),
+                ),
+                const SizedBox(height: 24.0),
+                ElevatedButton(
+                  onPressed: _saveRecord,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  ),
+                  child: const Text('Save Record'),
                 ),
               ],
             ],

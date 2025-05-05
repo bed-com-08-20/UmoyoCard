@@ -1,23 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:umoyocard/screens/records/dashboard_screen.dart';
-import 'package:umoyocard/screens/records/share_data.dart';
-import 'package:umoyocard/screens/records/timeline_screen.dart';
+import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
+import 'package:umoyocard/screens/records/health_insights/insights_prediction.dart';
 
-class RecordScreen extends StatelessWidget {
-  const RecordScreen({super.key});
+class HealthInsightsScreen extends StatelessWidget {
+  // ignore: use_super_parameters
+  const HealthInsightsScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Health Insights',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.blueAccent,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16.0),
               child: Text(
-                "Select a Record to View or Manage",
+                " Please access your health insights",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
+            // Grid layout for record cards
             Expanded(
               child: Column(
                 children: [
@@ -25,11 +40,10 @@ class RecordScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         _buildRecordCard(
-                          context,
-                          'Timeline',
-                          Icons.timeline,
-                          const TimelineScreen(),
-                        ),
+                            context,
+                            'Health Insights and Predictive analytics',
+                            Icons.favorite,
+                            InsightsPredictionsScreen()),
                       ],
                     ),
                   ),
@@ -38,15 +52,9 @@ class RecordScreen extends StatelessWidget {
                       children: [
                         _buildRecordCard(
                           context,
-                          'Predicitive Analytics',
-                          Icons.insights,
-                          DashboardScreen(),
-                        ),
-                        _buildRecordCard(
-                          context,
-                          'Share Data',
-                          Icons.share,
-                          const SharedDataRecord(),
+                          'Blood Sugar',
+                          Icons.medical_services,
+                          BloodSugarScreen(),
                         ),
                       ],
                     ),
@@ -77,14 +85,14 @@ class RecordScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.blue, size: 30),
+              Icon(icon, color: Colors.blue, size: 60),
               const SizedBox(height: 10),
               Text(
                 title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.black,
-                  fontSize: 14,
+                  fontSize: 16,
                 ),
               ),
             ],

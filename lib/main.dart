@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:umoyocard/screens/login/loading_screen.dart';
 import 'package:provider/provider.dart';
@@ -11,13 +10,13 @@ void main() {
   runApp(
     ChangeNotifierProvider(
       create: (_) => PasswordProvider(),
-      child: const MyApp(),
+      child: const MyApp(initialRoute: '/login',),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, required String initialRoute});
 
   @override
   Widget build(BuildContext context) {

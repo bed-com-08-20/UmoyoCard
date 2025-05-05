@@ -181,10 +181,18 @@ packages:
     dependency: transitive
     description:
       name: ffi
-      sha256: "289279317b4b16eb2bb7e271abccd4bf84ec9bdcbe999e278a94b804f5630418"
+      sha256: "16ed7b077ef01ad6170a3d0c57caa4a112a38d7a2ed5602e0aca9ca6f3d98da6"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.4"
+    version: "2.1.3"
+  fhir:
+    dependency: "direct main"
+    description:
+      name: fhir
+      sha256: fa4f739a3aa52d7817a098e50bf9e7e7159c1c85159baf08b03ce0e5c64be4cd
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.11.4"
   file:
     dependency: transitive
     description:
@@ -226,7 +234,7 @@ packages:
     source: hosted
     version: "0.9.3+4"
   firebase_core:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: firebase_core
       sha256: "017d17d9915670e6117497e640b2859e0b868026ea36bf3a57feb28c3b97debe"
@@ -270,6 +278,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_dotenv:
+    dependency: "direct main"
+    description:
+      name: flutter_dotenv
+      sha256: "31af2ccb42e2329a5b7f74e5f7afa52cde07d7f894b013398cc5cfec2a995a79"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.2.0"
   flutter_launcher_icons:
     dependency: "direct main"
     description:
@@ -286,6 +302,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0"
+  flutter_markdown:
+    dependency: "direct main"
+    description:
+      name: flutter_markdown
+      sha256: "634622a3a826d67cb05c0e3e576d1812c430fa98404e95b60b131775c73d76ec"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.7"
   flutter_native_splash:
     dependency: "direct main"
     description:
@@ -312,6 +336,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  freezed_annotation:
+    dependency: transitive
+    description:
+      name: freezed_annotation
+      sha256: c2e2d632dd9b8a2b7751117abcfc2b4888ecfe181bd9fca7170d9ef02e595fe2
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.4"
   google_generative_ai:
     dependency: "direct main"
     description:
@@ -472,6 +504,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.4"
+  image_cropper:
+    dependency: "direct main"
+    description:
+      name: image_cropper
+      sha256: "0c6ea3f96ccdcbe855fc86e9de582fdd6a94d578be8d817a05d9ecef9f1a258b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.0.0"
+  image_cropper_for_web:
+    dependency: transitive
+    description:
+      name: image_cropper_for_web
+      sha256: "34256c8fb7fcb233251787c876bb37271744459b593a948a2db73caa323034d0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.2"
+  image_cropper_platform_interface:
+    dependency: transitive
+    description:
+      name: image_cropper_platform_interface
+      sha256: e8e9d2ca36360387aee39295ce49029362ae4df3071f23e8e71f2b81e40b7531
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.0.0"
   image_picker:
     dependency: "direct main"
     description:
@@ -592,6 +648,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.257.0"
+  markdown:
+    dependency: transitive
+    description:
+      name: markdown
+      sha256: "935e23e1ff3bc02d390bad4d4be001208ee92cc217cb5b5a6c19bc14aaa318c1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.3.0"
   matcher:
     dependency: transitive
     description:
@@ -772,18 +836,18 @@ packages:
     dependency: "direct main"
     description:
       name: share_plus
-      sha256: b2961506569e28948d75ec346c28775bb111986bb69dc6a20754a457e3d97fa0
+      sha256: fce43200aa03ea87b91ce4c3ac79f0cecd52e2a7a56c7a4185023c271fbfa6da
       url: "https://pub.dev"
     source: hosted
-    version: "11.0.0"
+    version: "10.1.4"
   share_plus_platform_interface:
     dependency: transitive
     description:
       name: share_plus_platform_interface
-      sha256: "1032d392bc5d2095a77447a805aa3f804d2ae6a4d5eef5e6ebb3bd94c1bc19ef"
+      sha256: cc012a23fc2d479854e6c80150696c4a5f5bb62cb89af4de1c505cf78d0a5d0b
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.0"
+    version: "5.0.2"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -950,7 +1014,7 @@ packages:
     source: hosted
     version: "3.1.4"
   uuid:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: uuid
       sha256: a5be9ef6618a7ac1e964353ef476418026db906c4facdedaa299b7a2e71690ff
@@ -1005,6 +1069,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.0"
+  xml2json:
+    dependency: transitive
+    description:
+      name: xml2json
+      sha256: "8a7ae63b76676f083d81287b61f03222952609c0507893bc62e60a4a588a9702"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.2.7"
   yaml:
     dependency: transitive
     description:

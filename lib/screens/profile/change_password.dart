@@ -11,11 +11,13 @@ class ChangePasswordScreen extends StatefulWidget {
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   bool _isPasswordVisible = false;
 
   void _savePassword() {
-    if (_newPasswordController.text.isEmpty || _confirmPasswordController.text.isEmpty) {
+    if (_newPasswordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in both fields')),
       );

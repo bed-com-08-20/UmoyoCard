@@ -24,7 +24,6 @@ class BloodPressureRecord {
       'diastolic': diastolic,
       'date': date.toIso8601String(),
       'category': category,
-      // ignore: deprecated_member_use
       'color': color.value,
     };
   }
@@ -42,12 +41,15 @@ class BloodPressureRecord {
   static String getCategory(int systolic, int diastolic) {
     if (systolic < 120 && diastolic < 80) return "Normal";
     if (systolic >= 120 && systolic < 130 && diastolic < 80) return "Elevated";
-    if ((systolic >= 130 && systolic < 140) || (diastolic >= 80 && diastolic < 90)) return "Hypertension Stage 1";
-    if (systolic >= 140 && systolic <= 180 || diastolic >= 90 && diastolic <= 120) return "Hypertension Stage 2";
+    if ((systolic >= 130 && systolic < 140) || (diastolic >= 80 && diastolic < 90)) {
+      return "Hypertension Stage 1";
+    }
+    if (systolic >= 140 && diastolic >= 90) return "Hypertension Stage 2";
     if (systolic > 180 || diastolic > 120) return "Hypertensive Crisis";
     return "Not in range";
   }
-   static Color getColorForCategory(String category) {
+
+  static Color getColorForCategory(String category) {
     switch (category) {
       case "Normal": return Colors.green;
       case "Elevated": return Colors.blue;
@@ -210,7 +212,6 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                       color: Colors.lightBlue[100],
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: SingleChildScrollView( 
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -305,8 +306,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                               style: TextStyle(fontSize: 16),
                             ),
                           )
-                        ],
-                      ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -325,11 +325,10 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                               )
                             ]
                           : filteredRecords.map((record) {
-                              records.indexWhere((r) =>
-                                  r.date == record.date &&
-                                  r.systolic == record.systolic &&
-                                  r.diastolic == record.diastolic);
-
+                            records.indexWhere((r) =>
+                             r.date == record.date &&
+                              r.systolic == record.systolic &&
+                                r.diastolic == record.diastolic);
                               return Card(
                                 margin: const EdgeInsets.symmetric(vertical: 8),
                                 child: ListTile(
