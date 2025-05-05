@@ -212,6 +212,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                       color: Colors.lightBlue[100],
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    child: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -309,6 +310,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
                       ],
                     ),
                   ),
+                ),
                   const SizedBox(height: 12),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),

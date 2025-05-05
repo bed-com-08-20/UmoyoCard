@@ -76,35 +76,60 @@ class _TimelineScreenState extends State<TimelineScreen> {
       return record.date.toIso8601String();
     }).toList();
 
+    bool recordsUpdated = false;
+
     for (int i = 0; i < savedTexts.length; i++) {
       final text = savedTexts[i];
-      final bpMatch = RegExp(r'(\d{2,3})\s*\/\s*(\d{2,3})').firstMatch(text);
-      if (bpMatch != null) {
-        try {
-          final systolic = int.parse(bpMatch.group(1)!);
-          final diastolic = int.parse(bpMatch.group(2)!);
-          final date = DateTime.parse(savedDates[i]);
-          final dateString = date.toIso8601String();
-
-          if (!existingDates.contains(dateString)) {
-            final category = BloodPressureRecord.getCategory(systolic, diastolic);
-            final color = BloodPressureRecord.getColorForCategory(category);
-            final record = BloodPressureRecord(
-              systolic: systolic,
-              diastolic: diastolic,
-              date: date,
-              category: category,
-              color: color,
-            );
-
-            bpRecords.add(jsonEncode(record.toMap()));
-            await prefs.setStringList('blood_pressure_records', bpRecords);
-          }
-        } catch (e) {
-          debugPrint('Error parsing blood pressure entry: $e');
+      final dateStr = savedDates[i];
+      
+      try {
+        final date = DateTime.parse(dateStr);
+        final bpRecordAdded = await _checkAndAddBloodPressureRecord(text, date, bpRecords, existingDates);
+        if (bpRecordAdded) {
+          recordsUpdated = true;
         }
+      } catch (e) {
+        debugPrint('Error parsing date for blood pressure entry: $e');
       }
     }
+
+    if (recordsUpdated) {
+      await prefs.setStringList('blood_pressure_records', bpRecords);
+    }
+  }
+
+  Future<bool> _checkAndAddBloodPressureRecord(
+    String text, 
+    DateTime date, 
+    List<String> bpRecords,
+    List<String> existingDates,
+  ) async {
+    final bpMatch = RegExp(r'(\d{2,3})\s*\/\s*(\d{2,3})').firstMatch(text);
+    if (bpMatch != null) {
+      try {
+        final systolic = int.parse(bpMatch.group(1)!);
+        final diastolic = int.parse(bpMatch.group(2)!);
+        final dateString = date.toIso8601String();
+
+        if (!existingDates.contains(dateString)) {
+          final category = BloodPressureRecord.getCategory(systolic, diastolic);
+          final color = BloodPressureRecord.getColorForCategory(category);
+          final record = BloodPressureRecord(
+            systolic: systolic,
+            diastolic: diastolic,
+            date: date,
+            category: category,
+            color: color,
+          );
+
+          bpRecords.add(jsonEncode(record.toMap()));
+          return true;
+        }
+      } catch (e) {
+        debugPrint('Error parsing blood pressure entry: $e');
+      }
+    }
+    return false;
   }
 
   Future<void> _updatePreferences() async {
