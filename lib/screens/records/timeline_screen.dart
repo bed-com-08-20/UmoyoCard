@@ -65,15 +65,23 @@ class _TimelineScreenState extends State<TimelineScreen> {
           return dateB.compareTo(dateA);
         });
     });
-    _checkForBloodPressureEntries();
+     await _checkForBloodPressureEntries();
   }
 
-  Future<void> _checkForBloodPressureEntries() async {
+  Future<void> _updatePreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('savedTexts', savedTexts);
+    await prefs.setStringList('savedImages', savedImages);
+    await prefs.setStringList('savedDates', savedDates);
+    
+    // Check for blood pressure entries whenever data is updated
+    await _checkForBloodPressureEntries();
+  }
+    Future<void> _checkForBloodPressureEntries() async {
     final prefs = await SharedPreferences.getInstance();
     final bpRecords = prefs.getStringList('blood_pressure_records') ?? [];
-    final existingDates = bpRecords.map((json) {
-      final record = BloodPressureRecord.fromMap(jsonDecode(json));
-      return record.date.toIso8601String();
+    final existingRecords = bpRecords.map((json) {
+      return BloodPressureRecord.fromMap(jsonDecode(json));
     }).toList();
 
     bool recordsUpdated = false;
@@ -84,9 +92,20 @@ class _TimelineScreenState extends State<TimelineScreen> {
       
       try {
         final date = DateTime.parse(dateStr);
-        final bpRecordAdded = await _checkAndAddBloodPressureRecord(text, date, bpRecords, existingDates);
-        if (bpRecordAdded) {
-          recordsUpdated = true;
+        final newRecords = await _extractBloodPressureRecords(text, date);
+        
+        for (final newRecord in newRecords) {
+          // Check if this exact record already exists
+          final exists = existingRecords.any((r) => 
+            r.systolic == newRecord.systolic &&
+            r.diastolic == newRecord.diastolic &&
+            r.date == newRecord.date);
+          
+          if (!exists) {
+            bpRecords.add(jsonEncode(newRecord.toMap()));
+            existingRecords.add(newRecord);
+            recordsUpdated = true;
+          }
         }
       } catch (e) {
         debugPrint('Error parsing date for blood pressure entry: $e');
@@ -98,47 +117,34 @@ class _TimelineScreenState extends State<TimelineScreen> {
     }
   }
 
-  Future<bool> _checkAndAddBloodPressureRecord(
+  Future<List<BloodPressureRecord>> _extractBloodPressureRecords(
     String text, 
-    DateTime date, 
-    List<String> bpRecords,
-    List<String> existingDates,
+    DateTime date,
   ) async {
-    final bpMatch = RegExp(r'(\d{2,3})\s*\/\s*(\d{2,3})').firstMatch(text);
-    if (bpMatch != null) {
+    final records = <BloodPressureRecord>[];
+    final bpMatches = RegExp(r'(\d{2,3})\s*\/\s*(\d{2,3})').allMatches(text);
+    
+    for (final match in bpMatches) {
       try {
-        final systolic = int.parse(bpMatch.group(1)!);
-        final diastolic = int.parse(bpMatch.group(2)!);
-        final dateString = date.toIso8601String();
-
-        if (!existingDates.contains(dateString)) {
-          final category = BloodPressureRecord.getCategory(systolic, diastolic);
-          final color = BloodPressureRecord.getColorForCategory(category);
-          final record = BloodPressureRecord(
-            systolic: systolic,
-            diastolic: diastolic,
-            date: date,
-            category: category,
-            color: color,
-          );
-
-          bpRecords.add(jsonEncode(record.toMap()));
-          return true;
-        }
+        final systolic = int.parse(match.group(1)!);
+        final diastolic = int.parse(match.group(2)!);
+        
+        final category = BloodPressureRecord.getCategory(systolic, diastolic);
+        final color = BloodPressureRecord.getColorForCategory(category);
+        
+        records.add(BloodPressureRecord(
+          systolic: systolic,
+          diastolic: diastolic,
+          date: date,
+          category: category,
+          color: color,
+        ));
       } catch (e) {
         debugPrint('Error parsing blood pressure entry: $e');
       }
     }
-    return false;
+    return records;
   }
-
-  Future<void> _updatePreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('savedTexts', savedTexts);
-    await prefs.setStringList('savedImages', savedImages);
-    await prefs.setStringList('savedDates', savedDates);
-  }
-
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
     if (query.isEmpty) {
