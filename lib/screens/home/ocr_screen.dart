@@ -4,6 +4,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:umoyocard/screens/records/analytics_helper.dart'
+    as analytics_helper;
+//import 'package:umoyocard/analytics_helper.dart' as analytics_helper; // Import with a prefix
 
 class OCRScreen extends StatefulWidget {
   const OCRScreen({super.key});
@@ -17,6 +20,9 @@ class _OCRScreenState extends State<OCRScreen> {
   File? _imageFile;
   bool _isProcessing = false;
 
+  // Note: API Key should ideally be loaded securely, not hardcoded.
+  // For this example, using the one provided.
+  // If using dotenv, you would load it like: dotenv.env['GEMINI_API_KEY']
   final String _geminiApiKey = 'AIzaSyBjG13H2bbGtrQw_rHUyqRr82MS_6kp-A8';
   late final GenerativeModel _geminiModel;
 
@@ -46,6 +52,9 @@ class _OCRScreenState extends State<OCRScreen> {
     savedTexts.add(_extractedText);
     if (_imageFile != null) {
       savedImages.add(_imageFile!.path);
+    } else {
+      // Add an empty string placeholder if no image was saved for this entry
+      savedImages.add('');
     }
     savedDates.add(DateTime.now().toIso8601String());
 
@@ -53,15 +62,20 @@ class _OCRScreenState extends State<OCRScreen> {
     await prefs.setStringList('savedImages', savedImages);
     await prefs.setStringList('savedDates', savedDates);
 
+    // Trigger the analytics processing AFTER saving the data
+    analytics_helper.triggerAnalyticsProcessing();
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Health record saved successfully!')),
     );
 
+    // Clear the current state after saving
     setState(() {
       _extractedText = '';
       _imageFile = null;
     });
 
+    // Optionally pop the screen after saving
     Navigator.of(context).pop();
   }
 
@@ -81,22 +95,34 @@ class _OCRScreenState extends State<OCRScreen> {
 
     if (pickedFile != null) {
       File imageFile = File(pickedFile.path);
+      // Save the image locally first so we have a persistent path
       String savedPath = await saveImageLocally(imageFile);
+
       setState(() {
-        _imageFile = File(savedPath);
-        _isProcessing = true;
+        _imageFile = File(savedPath); // Use the saved path
+        _extractedText = ''; // Clear previous text
+        _isProcessing = true; // Show loading indicator
       });
 
+      // Process OCR on the saved image file
       await _processOCR(_imageFile!);
 
       setState(() {
-        _isProcessing = false;
+        _isProcessing = false; // Hide loading indicator
       });
     }
   }
 
   // Use Gemini API to process OCR and enhance text
   Future<void> _processOCR(File imageFile) async {
+    if (_geminiApiKey == 'MISSING_API_KEY' || _geminiApiKey.isEmpty) {
+      setState(() {
+        _extractedText = "Error: API Key is missing. Cannot perform OCR.";
+        _isProcessing = false;
+      });
+      return;
+    }
+
     try {
       final imageBytes = await imageFile.readAsBytes();
 
@@ -144,6 +170,10 @@ Identify and organize the following fields if they are present:
         const SnackBar(
             content: Text('Failed to process image. Please try again.')),
       );
+      setState(() {
+        _extractedText =
+            "Error processing image: $e"; // Display error in text area
+      });
     }
   }
 
@@ -203,7 +233,15 @@ Identify and organize the following fields if they are present:
               ],
               if (_imageFile != null) ...[
                 const SizedBox(height: 16.0),
-                Image.file(_imageFile!, height: 150, fit: BoxFit.cover),
+                // Display the image from the locally saved path
+                Image.file(
+                  _imageFile!,
+                  height: 150,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(child: Text('Could not load image.'));
+                  },
+                ),
               ],
               if (_extractedText.isNotEmpty) ...[
                 const SizedBox(height: 24.0),

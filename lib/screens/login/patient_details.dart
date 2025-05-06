@@ -20,12 +20,12 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   Map<String, dynamic>? _patientData;
   bool _isLoading = true;
   String? _errorMessage;
-  String? _documentContent; // For text-based content
+  String? _documentContent;
   String? _documentContentType;
   Uint8List? _documentBytes;
   bool _isFetchingDocument = false;
   String? _documentError;
-  String? _pdfFilePath; // To store the path of the temporarily saved PDF
+  String? _pdfFilePath;
 
   static const String _fhirServerBaseUrl = 'http://localhost:8080/fhir';
   static final _headers = {
@@ -41,7 +41,7 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
 
   Future<void> _fetchPatientDataAndRelatedDocument() async {
     await _fetchPatientData();
-    if (_patientData != null) {
+    if (_patientData != null && _hasPatientDataToShow()) {
       await _fetchFirstRelevantDocument();
     }
   }
@@ -70,8 +70,27 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
     }
   }
 
+  bool _hasPatientDataToShow() {
+    if (_patientData == null) return false;
+
+    final name = FHIRResourceParser.getPatientName(_patientData);
+    final gender = FHIRResourceParser.getPatientGender(_patientData);
+    final birthDate = FHIRResourceParser.getPatientBirthDate(_patientData);
+    final phones = FHIRResourceParser.getPatientPhoneNumbers(_patientData);
+    final emails = FHIRResourceParser.getPatientEmails(_patientData);
+    final address = FHIRResourceParser.getPatientAddress(_patientData);
+
+    return name.isNotEmpty ||
+        gender.isNotEmpty ||
+        birthDate.isNotEmpty ||
+        phones.isNotEmpty ||
+        emails.isNotEmpty ||
+        address.isNotEmpty;
+  }
+
   Future<void> _fetchFirstRelevantDocument() async {
-    final searchUrl = '$_fhirServerBaseUrl/DocumentReference?subject=Patient/${widget.patientId}';
+    final searchUrl =
+        '$_fhirServerBaseUrl/DocumentReference?subject=Patient/${widget.patientId}';
     setState(() {
       _isFetchingDocument = true;
       _documentError = null;
@@ -87,8 +106,12 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
         final entryList = searchResult['entry'] as List?;
         if (entryList != null && entryList.isNotEmpty) {
           final firstDocumentReference = entryList.first['resource'];
-          if (firstDocumentReference != null && firstDocumentReference['content'] != null && firstDocumentReference['content'].isNotEmpty && firstDocumentReference['content'][0]['attachment'] != null) {
-            final attachment = firstDocumentReference['content'][0]['attachment'];
+          if (firstDocumentReference != null &&
+              firstDocumentReference['content'] != null &&
+              firstDocumentReference['content'].isNotEmpty &&
+              firstDocumentReference['content'][0]['attachment'] != null) {
+            final attachment =
+                firstDocumentReference['content'][0]['attachment'];
             final base64Data = attachment['data'] as String?;
             final contentType = attachment['contentType'] as String?;
 
@@ -165,84 +188,123 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Patient Details',
-        style: TextStyle(color: Colors.white,)
+        title: const Text(
+          'Patient Details',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        centerTitle: true,
         backgroundColor: Colors.teal,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(child: Text(_errorMessage!))
-              : _patientData != null
-                  ? Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Name: ${FHIRResourceParser.getPatientName(_patientData)}',
-                              style: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                                'Gender: ${FHIRResourceParser.getPatientGender(_patientData)}'),
-                            const SizedBox(height: 8),
-                            Text(
-                                'Birth Date: ${FHIRResourceParser.getPatientBirthDate(_patientData)}'),
-                            const SizedBox(height: 8),
-                            if (FHIRResourceParser.getPatientPhoneNumbers(_patientData)
-                                .isNotEmpty) ...[
-                              const Text('Phone Numbers:',
-                                  style: TextStyle(fontWeight: FontWeight.bold)),
-                              ...FHIRResourceParser.getPatientPhoneNumbers(_patientData)
-                                  .map((phone) => Text(phone)),
-                              const SizedBox(height: 8),
-                            ],
-                            if (FHIRResourceParser.getPatientEmails(_patientData).isNotEmpty) ...[
-                              const Text('Emails:',
-                                  style: TextStyle(fontWeight: FontWeight.bold)),
-                              ...FHIRResourceParser.getPatientEmails(_patientData)
-                                  .map((email) => Text(email)),
-                              const SizedBox(height: 8),
-                            ],
-                            Text(
-                                'Address: ${FHIRResourceParser.getPatientAddress(_patientData)}'),
-                            const SizedBox(height: 16),
-                            const Text('Document Content:',
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 8),
-                            if (_isFetchingDocument)
-                              const Center(child: CircularProgressIndicator())
-                            else if (_documentError != null)
-                              Text('Error fetching document: $_documentError',
-                                  style: const TextStyle(color: Colors.red))
-                            else if (_documentContentType == 'text/plain' && _documentContent != null)
-                              Text(_documentContent!)
-                            else if (_documentContentType == 'application/pdf' && _pdfFilePath != null)
-                              SizedBox(
-                                height: 400, // Adjust as needed
-                                child: PDFView(
-                                  filePath: _pdfFilePath!,
-                                  enableSwipe: true,
-                                  swipeHorizontal: false,
-                                  autoSpacing: false,
-                                  pageSnap: true,
-                                  pageFling: false,
-                                ),
-                              )
-                            else if (_documentContentType?.startsWith('image/') == true && _documentBytes != null)
-                              Image.memory(_documentBytes!)
-                            else
-                              const Text('No document content available.'),
-                            const SizedBox(height: 16),
-                          ],
-                        ),
-                      ),
-                    )
-                  : const Center(child: Text('No patient data available.')),
+      body: _buildContent(),
     );
+  }
+
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return Center(child: Text(_errorMessage!));
+    }
+
+    if (_patientData == null) {
+      return const Center(
+        child: Text(
+          'No patient data available.',
+          style: TextStyle(fontSize: 16),
+        ),
+      );
+    }
+
+    if (!_hasPatientDataToShow()) {
+      return const Center(
+        child: Text(
+          'No patient data available to display.',
+          style: TextStyle(fontSize: 16),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Name: ${FHIRResourceParser.getPatientName(_patientData)}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+                'Gender: ${FHIRResourceParser.getPatientGender(_patientData)}'),
+            const SizedBox(height: 8),
+            Text(
+                'Birth Date: ${FHIRResourceParser.getPatientBirthDate(_patientData)}'),
+            const SizedBox(height: 8),
+            if (FHIRResourceParser.getPatientPhoneNumbers(_patientData)
+                .isNotEmpty) ...[
+              const Text('Phone Numbers:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              ...FHIRResourceParser.getPatientPhoneNumbers(_patientData)
+                  .map((phone) => Text(phone)),
+              const SizedBox(height: 8),
+            ],
+            if (FHIRResourceParser.getPatientEmails(_patientData)
+                .isNotEmpty) ...[
+              const Text('Emails:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              ...FHIRResourceParser.getPatientEmails(_patientData)
+                  .map((email) => Text(email)),
+              const SizedBox(height: 8),
+            ],
+            Text(
+                'Address: ${FHIRResourceParser.getPatientAddress(_patientData)}'),
+            const SizedBox(height: 16),
+            const Text('Document Content:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            _buildDocumentContent(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDocumentContent() {
+    if (_isFetchingDocument) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_documentError != null) {
+      return Text('Error fetching document: $_documentError',
+          style: const TextStyle(color: Colors.red));
+    }
+    if (_documentContentType == 'text/plain' && _documentContent != null) {
+      return Text(_documentContent!);
+    }
+    if (_documentContentType == 'application/pdf' && _pdfFilePath != null) {
+      return SizedBox(
+        height: 400,
+        child: PDFView(
+          filePath: _pdfFilePath!,
+          enableSwipe: true,
+          swipeHorizontal: false,
+          autoSpacing: false,
+          pageSnap: true,
+          pageFling: false,
+        ),
+      );
+    }
+    if (_documentContentType?.startsWith('image/') == true &&
+        _documentBytes != null) {
+      return Image.memory(_documentBytes!);
+    }
+    return const Text('No document content available.');
   }
 }

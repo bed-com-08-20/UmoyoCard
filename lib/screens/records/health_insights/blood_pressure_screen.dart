@@ -363,9 +363,18 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Blood Pressure', style: TextStyle(color: Colors.blue)),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black),
+        centerTitle: true,
+        backgroundColor: Colors.teal,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          'Blood Pressure',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: Column(
         children: [

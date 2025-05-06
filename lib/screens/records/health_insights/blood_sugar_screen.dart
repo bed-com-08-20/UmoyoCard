@@ -28,7 +28,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     final timelineTexts = prefs.getStringList('savedTexts') ?? [];
     final timelineDates = prefs.getStringList('savedDates') ?? [];
     print('Timeline Texts: $timelineTexts'); // Print the entire list
-  print('Timeline Dates: $timelineDates');
+    print('Timeline Dates: $timelineDates');
     List<Map<String, dynamic>> bloodSugarReadings = [];
 
     // Updated regex to include "blood sugar", "sugar", "glucose", "BG", "BGL"
@@ -41,7 +41,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
       final text = timelineTexts[i];
       final match = bloodSugarRegex.firstMatch(text);
       if (match != null && i < timelineDates.length) {
-        final value = double.tryParse(match.group(2) ?? ''); 
+        final value = double.tryParse(match.group(2) ?? '');
         final dateString = timelineDates[i];
         if (value != null) {
           bloodSugarReadings.add({
@@ -55,7 +55,6 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     return bloodSugarReadings;
   }
 
-
   Future<void> _loadInitialData() async {
     // Load blood sugar records saved directly by this screen
     await _loadRecords();
@@ -65,15 +64,17 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     setState(() {
       // Add the timeline data to the existing records
       records.addAll(timelineData);
-       print('Records after adding timeline data: $records');
+      print('Records after adding timeline data: $records');
       // Ensure all records have a 'status' and 'timestamp' if they don't
       records = records.map((record) {
-        record['timestamp'] ??= DateTime.parse(record['date']).millisecondsSinceEpoch;
+        record['timestamp'] ??=
+            DateTime.parse(record['date']).millisecondsSinceEpoch;
         record['status'] ??= _determineStatus(record['value']);
         return record;
       }).toList();
       // Sort the combined records by date
-      records.sort((a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int));
+      records.sort(
+          (a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int));
       _updateAvailableMonths();
       _saveRecords(); // Save the combined data if needed
     });
@@ -158,7 +159,8 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: _getStatusColor(record['status'] ?? _determineStatus(record['value'])),
+              backgroundColor: _getStatusColor(
+                  record['status'] ?? _determineStatus(record['value'])),
               radius: 15,
             ),
             SizedBox(width: 12),
@@ -252,7 +254,8 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                     barRods: [
                       BarChartRodData(
                         toY: entry.value['value'],
-                        color: _getStatusColor(entry.value['status'] ?? _determineStatus(entry.value['value'])),
+                        color: _getStatusColor(entry.value['status'] ??
+                            _determineStatus(entry.value['value'])),
                         width: 18,
                         borderRadius: BorderRadius.circular(5),
                         borderSide: BorderSide(
@@ -361,10 +364,18 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Blood Sugar', style: TextStyle(color: Colors.blue)),
-        backgroundColor: Colors.white,
         centerTitle: true,
+        backgroundColor: Colors.teal,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          'Blood Sugar',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,

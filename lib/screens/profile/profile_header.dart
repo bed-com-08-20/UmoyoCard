@@ -1,7 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:umoyocard/screens/login/login_screen.dart';
 import 'package:umoyocard/screens/profile/profile_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileHeader extends StatefulWidget {
   const ProfileHeader({super.key});
@@ -13,6 +14,7 @@ class ProfileHeader extends StatefulWidget {
 class _ProfileHeaderState extends State<ProfileHeader> {
   String _previousLogin = '';
   String _userName = 'Wadi Mkweza';
+  File? _profileImage;
 
   @override
   void initState() {
@@ -25,6 +27,10 @@ class _ProfileHeaderState extends State<ProfileHeader> {
     setState(() {
       _previousLogin = prefs.getString('previousLogin') ?? 'First login';
       _userName = prefs.getString('userName') ?? 'Wadi Mkweza';
+      final imagePath = prefs.getString('profileImagePath');
+      if (imagePath != null) {
+        _profileImage = File(imagePath);
+      }
     });
   }
 
@@ -75,7 +81,7 @@ class _ProfileHeaderState extends State<ProfileHeader> {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ProfileScreen()),
-        );
+        ).then((_) => _loadLoginInfo());
       },
       child: PopupMenuButton<String>(
         offset: const Offset(0, 50),
@@ -128,14 +134,13 @@ class _ProfileHeaderState extends State<ProfileHeader> {
         },
         child: CircleAvatar(
           radius: 20,
-          backgroundImage: const AssetImage('assets/profile_image.png'),
+          backgroundImage: _profileImage != null
+              ? FileImage(_profileImage!)
+              : const AssetImage('assets/profile_image.png') as ImageProvider,
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
-              ),
+              border: Border.all(color: Colors.white, width: 2),
             ),
           ),
         ),

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:umoyocard/screens/patient_details.dart';
+import 'package:umoyocard/screens/login/patient_details.dart';
 import 'package:umoyocard/services/fhir_service.dart';
 
 class SharedDataRecord extends StatefulWidget {
@@ -727,12 +727,31 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
               ? 'Share Data'
               : '${_selectedIndices.length} Selected',
           style: const TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
+          // Patient details button moved to actions
+          IconButton(
+            icon: const Icon(Icons.verified_user),
+            tooltip: 'View Patient Details',
+            onPressed: () async {
+              String currentPatientId = 'f966f58b-a727-46bc-829d-0f56f551e311';
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      PatientDetailsScreen(patientId: currentPatientId),
+                ),
+              );
+            },
+          ),
           // --- Add a Clear Selection button to AppBar ---
           if (_selectedIndices.isNotEmpty)
             IconButton(
@@ -743,23 +762,8 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
                   _selectedIndices.clear();
                 });
               },
-            )
+            ),
         ],
-        leading: IconButton(
-            onPressed: () async {
-              String currentPatientId;
-                
-              currentPatientId = '7a130beb-fa9a-4f80-88cf-fda667550625';
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        PatientDetailsScreen(patientId: currentPatientId),
-                  ),
-                );
-              
-            },
-            icon: Icon(Icons.view_list_sharp)),
       ),
       body: SafeArea(
         child: Column(

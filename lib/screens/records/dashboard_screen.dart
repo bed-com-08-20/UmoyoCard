@@ -1,12 +1,8 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
-import 'package:crypto/crypto.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:umoyocard/screens/records/analytics_helper.dart'
+    as analytics_helper;
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -16,190 +12,129 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  bool _isLoading = false;
+  bool _isLoading = true; // Start as true to indicate loading saved data
   String _analyticsResult = '';
   String _errorMessage = '';
-  final String _geminiApiKey = 'AIzaSyBjG13H2bbGtrQw_rHUyqRr82MS_6kp-A8';
 
-  late final GenerativeModel _geminiModel;
+  // Remove _geminiApiKey and _geminiModel as the helper manages them
 
   @override
   void initState() {
     super.initState();
-    _geminiModel = GenerativeModel(
-      model: 'gemini-1.5-pro-latest',
-      apiKey: _geminiApiKey,
-    );
-    _checkAndRunAnalysis();
+    // Removed direct Gemini model initialization
+    _loadAndCheckAnalysis(); // Call a method to load saved data and trigger background check
   }
 
-  Future<void> _checkAndRunAnalysis() async {
-    final String currentTimeline = await _fetchAndFormatTimelineData();
-
-    if (currentTimeline.startsWith("No medical history data found")) {
-      setState(() => _errorMessage = currentTimeline);
-      return;
-    }
-
-    final currentHash = sha256.convert(utf8.encode(currentTimeline)).toString();
-
-    final prefs = await SharedPreferences.getInstance();
-    final lastHash = prefs.getString('lastTimelineHash');
-
-    if (lastHash != currentHash) {
-      await _runPredictiveAnalysis(currentTimeline);
-      await prefs.setString('lastTimelineHash', currentHash);
-    } else {
-      _loadSavedAnalysis();
-    }
-  }
-
-  Future<void> _loadSavedAnalysis() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedAnalysis = prefs.getString('savedAnalysis');
-    if (savedAnalysis != null && savedAnalysis.isNotEmpty) {
-      setState(() => _analyticsResult = savedAnalysis);
-    }
-  }
-
-  Future<void> _saveAnalysis(String analysis) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('savedAnalysis', analysis);
-  }
-
-  Future<String> _fetchAndFormatTimelineData() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> savedTexts = prefs.getStringList('savedTexts') ?? [];
-    List<String> savedDates = prefs.getStringList('savedDates') ?? [];
-
-    if (savedTexts.isEmpty) {
-      return "No medical history data found to analyze.";
-    }
-
-    List<MapEntry<DateTime, String>> datedEntries = [];
-    for (int i = 0; i < savedTexts.length; i++) {
-      if (i < savedDates.length) {
-        try {
-          DateTime date = DateTime.parse(savedDates[i]);
-          datedEntries.add(MapEntry(date, savedTexts[i]));
-        } catch (_) {
-          datedEntries.add(
-              MapEntry(DateTime.now(), savedTexts[i] + " (Date Parse Error)"));
-        }
-      } else {
-        datedEntries
-            .add(MapEntry(DateTime.now(), savedTexts[i] + " (Missing Date)"));
-      }
-    }
-
-    datedEntries.sort((a, b) => a.key.compareTo(b.key));
-
-    StringBuffer formattedData = StringBuffer();
-    formattedData.writeln("Medical History Timeline (Oldest First):");
-    for (var entry in datedEntries) {
-      String formattedDate = DateFormat('yyyy-MM-dd').format(entry.key);
-      formattedData.writeln("---");
-      formattedData.writeln("Date: $formattedDate");
-      formattedData.writeln("Details: ${entry.value.trim()}");
-    }
-    formattedData.writeln("---");
-
-    return formattedData.toString();
-  }
-
-  Future<void> _runPredictiveAnalysis(String timelineData) async {
-    if (_geminiApiKey == 'MISSING_API_KEY') {
-      setState(() {
-        _errorMessage = "API Key is missing. Cannot generate insights.";
-        _isLoading = false;
-      });
-      return;
-    }
-
+  Future<void> _loadAndCheckAnalysis() async {
     setState(() {
       _isLoading = true;
       _analyticsResult = '';
       _errorMessage = '';
     });
 
-    final String prompt = '''
-You are a thoughtful and concise health assistant. Carefully read **my** medical timeline below.
-
-**Your task:**
-- Talk **directly to me**. Use words like **"you"**, **"your health"**, not "the user".
-- Be **brief and clear**: 3–5 lines max per section.
-- Use **friendly, simple language** I can easily understand.
-- Do **not** give medical advice or conclusions — just point out trends and tips.
-- Write in **Markdown format** with the headings below only.
-
-Here is **my** health timeline:
----
-$timelineData
----
-
-## Observed Trends  
-What patterns or habits do you notice from **my** health history?
-
-## Future Considerations  
-Based on what you see, what should **I** keep an eye on?
-
-## Quick Wellness Tip  
-What’s one helpful tip that fits **my** situation?
-''';
-
     try {
-      final content = [Content.text(prompt)];
-      final response = await _geminiModel.generateContent(content);
+      final prefs = await SharedPreferences.getInstance();
+      // Load the pre-calculated result from the helper
+      final savedResult = await analytics_helper.loadSavedAnalysis(prefs);
 
-      final resultText = response.text ?? "No insights generated.";
+      if (savedResult != null && savedResult.isNotEmpty) {
+        print("Loaded saved analysis result.");
+        setState(() {
+          _analyticsResult = savedResult;
+          _isLoading = false; // Data loaded, stop loading indicator
+        });
+      } else {
+        print("No saved analysis found. Triggering initial processing.");
+        // If no saved result, it might be the first run or data was cleared.
+        // Show loading while we wait for the first analysis.
 
-      setState(() {
-        _analyticsResult = resultText;
-        _isLoading = false;
+        // Use helper functions to fetch, run, and save
+        final currentTimeline =
+            await analytics_helper.fetchAndFormatTimelineData(prefs);
+
+        if (currentTimeline.startsWith("No medical history data found")) {
+          setState(() {
+            _errorMessage = currentTimeline;
+            _isLoading = false;
+          });
+          return;
+        }
+
+        final analysisResult =
+            await analytics_helper.runPredictiveAnalysis(currentTimeline);
+        await analytics_helper.saveAnalysis(prefs, analysisResult);
+        final currentHash = analytics_helper.calculateHash(currentTimeline);
+        await analytics_helper.saveLastTimelineHash(prefs, currentHash);
+
+        setState(() {
+          _analyticsResult = analysisResult;
+          _isLoading = false;
+        });
+      }
+
+      // --- ADD THIS LINE (Optional but recommended as fallback) ---
+      // Trigger the processing check in the background just in case,
+      // but don't wait for it. The UI already has the loaded result.
+      analytics_helper.triggerAnalyticsProcessing().catchError((e) {
+        print("Background analytics trigger failed: $e");
+        // Handle error if needed, maybe update error state?
       });
-
-      await _saveAnalysis(resultText);
+      // -----------------------------------------------------------
     } catch (e) {
+      print("Error loading/checking analysis: $e");
       setState(() {
-        _errorMessage = "Error during analysis: $e";
+        _errorMessage = "Error loading analytics: $e";
         _isLoading = false;
       });
     }
   }
+
+  // Removed the individual _fetchAndFormatTimelineData, _runPredictiveAnalysis,
+  // _loadSavedAnalysis, _saveAnalysis, _checkAndRunAnalysis methods
+  // as their logic is now in analytics_helper.dart
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
+          // Added const
           "Predictive Analytics",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
         backgroundColor: Colors.teal,
         foregroundColor: Colors.white,
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0), // Added const
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator()) // Added const
               : _errorMessage.isNotEmpty
                   ? Center(child: Text(_errorMessage))
-                  : SingleChildScrollView(
-                      child: MarkdownBody(
-                        data: _analyticsResult,
-                        styleSheet: MarkdownStyleSheet(
-                          h2: const TextStyle(
-                            color: Colors.teal,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          p: const TextStyle(
-                            fontSize: 16,
+                  : _analyticsResult
+                          .isEmpty // Show message if no result and no error
+                      ? const Center(
+                          child: Text(
+                              'No analysis available yet. Add some timeline data!')) // Added const
+                      : SingleChildScrollView(
+                          child: MarkdownBody(
+                            data: _analyticsResult,
+                            styleSheet: MarkdownStyleSheet(
+                              h2: const TextStyle(
+                                // Added const
+                                color: Colors.teal,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              p: const TextStyle(
+                                // Added const
+                                fontSize: 16,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
         ),
       ),
     );

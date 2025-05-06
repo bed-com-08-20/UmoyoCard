@@ -7,7 +7,7 @@ void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(MyApp(
-      initialRoute: '/login', // Provide the required parameter
+      initialRoute: '/login',
     ));
 
     expect(find.text('Welcome to UmoyoCard'), findsOneWidget);
