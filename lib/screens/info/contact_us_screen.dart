@@ -119,10 +119,19 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                           _messageController.clear();
                         }
                       },
-                      child: const Padding(
-                        padding: EdgeInsets.all(12.0),
-                        child: Text('Submit', style: TextStyle(fontSize: 16)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.teal, // This makes the button teal
+                        foregroundColor:
+                            Colors.white, // This makes the text white
+                        padding: const EdgeInsets.all(16.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                              8.0), // Optional: adds rounded corners
+                        ),
                       ),
+                      child:
+                          const Text('Submit', style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ],
@@ -135,7 +144,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             ),
             const SizedBox(height: 10),
             const Text('Email: support@umoyocard.com'),
-            const Text('Phone: +1 (555) 123-4567'),
+            const Text('Phone: +265 888 447 122'),
             const Text('Address: 123 Health Tech Street, Digital City'),
           ],
         ),

@@ -235,6 +235,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
         Expanded(
           child: Card(
             margin: const EdgeInsets.only(bottom: 16.0),
+            color: Color(0xFFF3E5F5),
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -243,7 +244,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8.0),
                     child: Text(
-                      DateFormat('MMM dd, - HH:mm').format(itemDate.toLocal()),
+                      DateFormat('dd MMM yyyy - HH:mm')
+                          .format(itemDate.toLocal()),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -470,7 +472,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
     await _updatePreferences();
 
-    analytics_helper.triggerAnalyticsProcessing();
+    //analytics_helper.triggerAnalyticsProcessing();
+    analytics_helper.triggerCompleteAnalyticsProcessing();
 
     _loadSavedData();
   }

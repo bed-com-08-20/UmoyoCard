@@ -26,7 +26,7 @@ class TermsOfUseScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Last Updated: January 1, 2025',
+              'Last Updated: March 1, 2025',
               style: TextStyle(fontStyle: FontStyle.italic),
             ),
             const SizedBox(height: 20),

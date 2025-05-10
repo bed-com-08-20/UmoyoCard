@@ -1,19 +1,148 @@
-// analytics_helper.dart
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
-// Note: API Key should ideally be loaded securely, not hardcoded.
-// For this example, using the one provided.
-const String _geminiApiKey = 'AIzaSyBjG13H2bbGtrQw_rHUyqRr82MS_6kp-A8';
+const String _geminiApiKey = 'AIzaSyBKbJD5DGB1R9zzPWEmYRgStiwlFzcIB3Q';
 final GenerativeModel _geminiModel = GenerativeModel(
-  model: 'gemini-1.5-pro-latest',
+  model: 'gemini-2.0-flash',
   apiKey: _geminiApiKey,
 );
 
-/// Fetches and formats the timeline data from SharedPreferences.
+class HealthMetrics {
+  final List<BloodPressureData> bloodPressureData;
+  final List<BloodSugarData> bloodSugarData;
+  final String bloodPressurePrediction;
+  final String bloodPressureTip;
+  final String bloodSugarPrediction;
+  final String bloodSugarTip;
+
+  HealthMetrics({
+    required this.bloodPressureData,
+    required this.bloodSugarData,
+    required this.bloodPressurePrediction,
+    required this.bloodPressureTip,
+    required this.bloodSugarPrediction,
+    required this.bloodSugarTip,
+  });
+}
+
+class BloodPressureData {
+  final DateTime date;
+  final int systolic;
+  final int diastolic;
+
+  BloodPressureData({
+    required this.date,
+    required this.systolic,
+    required this.diastolic,
+  });
+}
+
+class BloodSugarData {
+  final DateTime date;
+  final double value;
+
+  BloodSugarData({
+    required this.date,
+    required this.value,
+  });
+}
+
+Future<HealthMetrics> extractHealthMetrics(String timelineData) async {
+  final prompt = '''
+From this medical timeline, extract ALL blood pressure and blood sugar readings with their dates.
+Return ONLY valid JSON in this exact format with no additional text:
+
+{
+  "bloodPressure": [
+    {"date": "YYYY-MM-DD", "systolic": 120, "diastolic": 80},
+    {"date": "YYYY-MM-DD", "systolic": 130, "diastolic": 85},
+    ...
+  ],
+  "bloodSugar": [
+    {"date": "YYYY-MM-DD", "value": 95.0},
+    {"date": "YYYY-MM-DD", "value": 110.0},
+    ...
+  ],
+  "bpPrediction": "brief prediction based on trends",
+  "bpTip": "practical tip based on readings",
+  "sugarPrediction": "brief prediction based on trends", 
+  "sugarTip": "practical tip based on readings"
+}
+
+Important:
+- Extract ALL numeric values after "blood pressure", "bp", "sugar", "glucose" etc.
+- Return empty arrays if no data found
+- Dates must match the timeline entries
+- Values must be numbers
+- Include predictions and tips based on the data
+
+Timeline Data:
+$timelineData
+''';
+
+  try {
+    final content = [Content.text(prompt)];
+    final response = await _geminiModel.generateContent(content);
+    final jsonString = _cleanJsonResponse(response.text ?? '{}');
+    print("Raw JSON response: $jsonString");
+    final jsonData = jsonDecode(jsonString);
+
+    return HealthMetrics(
+      bloodPressureData: (jsonData['bloodPressure'] as List? ?? []).map((item) {
+        return BloodPressureData(
+          date: DateTime.parse(item['date'].toString()),
+          systolic: item['systolic'] is int
+              ? item['systolic']
+              : int.parse(item['systolic'].toString()),
+          diastolic: item['diastolic'] is int
+              ? item['diastolic']
+              : int.parse(item['diastolic'].toString()),
+        );
+      }).toList(),
+      bloodSugarData: (jsonData['bloodSugar'] as List? ?? []).map((item) {
+        return BloodSugarData(
+          date: DateTime.parse(item['date'].toString()),
+          value: item['value'] is double
+              ? item['value']
+              : double.parse(item['value'].toString()),
+        );
+      }).toList(),
+      bloodPressurePrediction:
+          jsonData['bpPrediction']?.toString() ?? 'No prediction available',
+      bloodPressureTip: jsonData['bpTip']?.toString() ?? 'No tip available',
+      bloodSugarPrediction:
+          jsonData['sugarPrediction']?.toString() ?? 'No prediction available',
+      bloodSugarTip: jsonData['sugarTip']?.toString() ?? 'No tip available',
+    );
+  } catch (e) {
+    print("Error extracting metrics: $e");
+    return HealthMetrics(
+      bloodPressureData: [],
+      bloodSugarData: [],
+      bloodPressurePrediction: 'Error processing data',
+      bloodPressureTip: 'Check your timeline entries',
+      bloodSugarPrediction: 'Error processing data',
+      bloodSugarTip: 'Check your timeline entries',
+    );
+  }
+}
+
+String _cleanJsonResponse(String response) {
+  response = response.replaceAll('```json', '').replaceAll('```', '');
+  final startIndex = response.indexOf('{');
+  if (startIndex > 0) {
+    response = response.substring(startIndex);
+  }
+  final endIndex = response.lastIndexOf('}');
+  if (endIndex < response.length - 1) {
+    response = response.substring(0, endIndex + 1);
+  }
+  return response.trim();
+}
+
 Future<String> fetchAndFormatTimelineData(SharedPreferences prefs) async {
   List<String> savedTexts = prefs.getStringList('savedTexts') ?? [];
   List<String> savedDates = prefs.getStringList('savedDates') ?? [];
@@ -29,18 +158,15 @@ Future<String> fetchAndFormatTimelineData(SharedPreferences prefs) async {
         DateTime date = DateTime.parse(savedDates[i]);
         datedEntries.add(MapEntry(date, savedTexts[i]));
       } catch (_) {
-        // Handle date parse errors gracefully by using current date and noting the error
         datedEntries.add(
             MapEntry(DateTime.now(), savedTexts[i] + " (Date Parse Error)"));
       }
     } else {
-      // Handle missing dates by using current date and noting the issue
       datedEntries
           .add(MapEntry(DateTime.now(), savedTexts[i] + " (Missing Date)"));
     }
   }
 
-  // Sort entries by date, oldest first for the AI prompt
   datedEntries.sort((a, b) => a.key.compareTo(b.key));
 
   StringBuffer formattedData = StringBuffer();
@@ -56,7 +182,6 @@ Future<String> fetchAndFormatTimelineData(SharedPreferences prefs) async {
   return formattedData.toString();
 }
 
-/// Runs the predictive analysis using the Generative AI model.
 Future<String> runPredictiveAnalysis(String timelineData) async {
   if (_geminiApiKey == 'MISSING_API_KEY' || _geminiApiKey.isEmpty) {
     return "Error: API Key is missing. Cannot generate insights.";
@@ -84,7 +209,7 @@ What patterns or habits do you notice from **my** health history?
 Based on what you see, what should **I** keep an eye on?
 
 ## Quick Wellness Tip
-What’s one helpful tip that fits **my** situation?
+What's one helpful tip that fits **my** situation?
 ''';
 
   try {
@@ -92,63 +217,144 @@ What’s one helpful tip that fits **my** situation?
     final response = await _geminiModel.generateContent(content);
     return response.text ?? "No insights generated.";
   } catch (e) {
-    print("Error generating analysis: $e"); // Log the error
-    return "Error during analysis: $e"; // Return error message to be displayed
+    return "Error during analysis: $e";
   }
 }
 
-/// Saves the analysis result to SharedPreferences.
 Future<void> saveAnalysis(SharedPreferences prefs, String analysis) async {
   await prefs.setString('savedAnalysis', analysis);
 }
 
-/// Loads the analysis result from SharedPreferences.
 Future<String?> loadSavedAnalysis(SharedPreferences prefs) async {
   return prefs.getString('savedAnalysis');
 }
 
-/// Gets the last stored hash of the timeline data.
 Future<String?> getLastTimelineHash(SharedPreferences prefs) async {
   return prefs.getString('lastTimelineHash');
 }
 
-/// Saves the current hash of the timeline data.
 Future<void> saveLastTimelineHash(SharedPreferences prefs, String hash) async {
   await prefs.setString('lastTimelineHash', hash);
 }
 
-/// Calculates the SHA256 hash of the timeline data string.
 String calculateHash(String data) {
   return sha256.convert(utf8.encode(data)).toString();
 }
 
-/// Public function to trigger analytics processing if data has changed.
-/// This is the function TimelineScreen will call after saving.
-/// It runs asynchronously and doesn't directly update UI state.
 Future<void> triggerAnalyticsProcessing() async {
-  print("Attempting to trigger analytics processing...");
   final prefs = await SharedPreferences.getInstance();
   final currentTimeline = await fetchAndFormatTimelineData(prefs);
 
   if (currentTimeline.startsWith("No medical history data found")) {
-    print("No data to analyze. Clearing saved analysis.");
-    // Optionally clear saved analysis if data is gone
     await saveAnalysis(prefs, '');
     await saveLastTimelineHash(prefs, '');
-    return; // No data, no analysis needed
+    return;
   }
 
   final currentHash = calculateHash(currentTimeline);
   final lastHash = await getLastTimelineHash(prefs);
 
   if (lastHash != currentHash) {
-    print("Timeline data changed. Running predictive analysis.");
-    // Note: Analysis runs in the background (non-blocking)
     final analysisResult = await runPredictiveAnalysis(currentTimeline);
     await saveAnalysis(prefs, analysisResult);
     await saveLastTimelineHash(prefs, currentHash);
-    print("Analytics processing complete and saved.");
-  } else {
-    print("Timeline data hash matches. No analysis needed.");
+  }
+}
+
+// ================== NEW CACHING FUNCTIONS ================== //
+
+Future<void> saveHealthMetrics(
+    SharedPreferences prefs, HealthMetrics metrics) async {
+  await prefs.setString(
+      'savedHealthMetrics',
+      jsonEncode({
+        'bloodPressure': metrics.bloodPressureData
+            .map((e) => {
+                  'date': e.date.toIso8601String(),
+                  'systolic': e.systolic,
+                  'diastolic': e.diastolic,
+                })
+            .toList(),
+        'bloodSugar': metrics.bloodSugarData
+            .map((e) => {
+                  'date': e.date.toIso8601String(),
+                  'value': e.value,
+                })
+            .toList(),
+        'bpPrediction': metrics.bloodPressurePrediction,
+        'bpTip': metrics.bloodPressureTip,
+        'sugarPrediction': metrics.bloodSugarPrediction,
+        'sugarTip': metrics.bloodSugarTip,
+      }));
+}
+
+Future<HealthMetrics?> loadSavedHealthMetrics(SharedPreferences prefs) async {
+  final savedMetricsJson = prefs.getString('savedHealthMetrics');
+  if (savedMetricsJson == null) return null;
+
+  try {
+    final jsonData = jsonDecode(savedMetricsJson);
+    return HealthMetrics(
+      bloodPressureData: (jsonData['bloodPressure'] as List? ?? []).map((item) {
+        return BloodPressureData(
+          date: DateTime.parse(item['date'].toString()),
+          systolic: item['systolic'] is int
+              ? item['systolic']
+              : int.parse(item['systolic'].toString()),
+          diastolic: item['diastolic'] is int
+              ? item['diastolic']
+              : int.parse(item['diastolic'].toString()),
+        );
+      }).toList(),
+      bloodSugarData: (jsonData['bloodSugar'] as List? ?? []).map((item) {
+        return BloodSugarData(
+          date: DateTime.parse(item['date'].toString()),
+          value: item['value'] is double
+              ? item['value']
+              : double.parse(item['value'].toString()),
+        );
+      }).toList(),
+      bloodPressurePrediction: jsonData['bpPrediction']?.toString() ?? '',
+      bloodPressureTip: jsonData['bpTip']?.toString() ?? '',
+      bloodSugarPrediction: jsonData['sugarPrediction']?.toString() ?? '',
+      bloodSugarTip: jsonData['sugarTip']?.toString() ?? '',
+    );
+  } catch (e) {
+    print("Error parsing saved health metrics: $e");
+    return null;
+  }
+}
+
+// Enhanced version of triggerAnalyticsProcessing that also saves metrics
+Future<void> triggerCompleteAnalyticsProcessing() async {
+  final prefs = await SharedPreferences.getInstance();
+  final currentTimeline = await fetchAndFormatTimelineData(prefs);
+
+  if (currentTimeline.startsWith("No medical history data found")) {
+    await saveAnalysis(prefs, '');
+    await saveLastTimelineHash(prefs, '');
+    await saveHealthMetrics(
+        prefs,
+        HealthMetrics(
+          bloodPressureData: [],
+          bloodSugarData: [],
+          bloodPressurePrediction: '',
+          bloodPressureTip: '',
+          bloodSugarPrediction: '',
+          bloodSugarTip: '',
+        ));
+    return;
+  }
+
+  final currentHash = calculateHash(currentTimeline);
+  final lastHash = await getLastTimelineHash(prefs);
+
+  if (lastHash != currentHash) {
+    final metrics = await extractHealthMetrics(currentTimeline);
+    final analysisResult = await runPredictiveAnalysis(currentTimeline);
+
+    await saveAnalysis(prefs, analysisResult);
+    await saveHealthMetrics(prefs, metrics);
+    await saveLastTimelineHash(prefs, currentHash);
   }
 }

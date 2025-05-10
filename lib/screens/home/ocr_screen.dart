@@ -6,7 +6,6 @@ import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:umoyocard/screens/records/analytics_helper.dart'
     as analytics_helper;
-//import 'package:umoyocard/analytics_helper.dart' as analytics_helper; // Import with a prefix
 
 class OCRScreen extends StatefulWidget {
   const OCRScreen({super.key});
@@ -23,14 +22,14 @@ class _OCRScreenState extends State<OCRScreen> {
   // Note: API Key should ideally be loaded securely, not hardcoded.
   // For this example, using the one provided.
   // If using dotenv, you would load it like: dotenv.env['GEMINI_API_KEY']
-  final String _geminiApiKey = 'AIzaSyBjG13H2bbGtrQw_rHUyqRr82MS_6kp-A8';
+  final String _geminiApiKey = 'AIzaSyBKbJD5DGB1R9zzPWEmYRgStiwlFzcIB3Q';
   late final GenerativeModel _geminiModel;
 
   @override
   void initState() {
     super.initState();
     _geminiModel = GenerativeModel(
-      model: 'gemini-1.5-pro-latest',
+      model: 'gemini-2.0-flash',
       apiKey: _geminiApiKey,
     );
   }
@@ -63,7 +62,8 @@ class _OCRScreenState extends State<OCRScreen> {
     await prefs.setStringList('savedDates', savedDates);
 
     // Trigger the analytics processing AFTER saving the data
-    analytics_helper.triggerAnalyticsProcessing();
+    // analytics_helper.triggerAnalyticsProcessing();
+    analytics_helper.triggerCompleteAnalyticsProcessing();
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Health record saved successfully!')),
@@ -145,10 +145,25 @@ Identify and organize the following fields if they are present:
 2. Medical Condition(s) or Diagnosis
 3. Medication Name(s)
 4. Dosage and Frequency
-5. Administration Instructions
 6. Doctor or Hospital Name
-7. Patient Information (Name, Age, etc.)
 8. Signs, symptoms, or Observations
+
+Extract verbatim text following SOAPIER format:
+Subjective: [exact patient-reported symptoms]
+Objective: [exact measurements/observations]
+Assessment: [exact diagnoses]
+Plan: [exact treatment instructions]
+Interventions: [exact procedures performed]
+Evaluation: [exact outcome notes]
+Revisions: [exact changes to care]
+
+Rules:
+1. Never modify content
+2. Skip empty sections
+3. No interpretations
+4. No formatting
+5. No labels
+6. No comments
 ''';
 
       final content = Content(
@@ -188,7 +203,7 @@ Identify and organize the following fields if they are present:
         title: const Text(
           'OCR Scan',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -218,6 +233,7 @@ Identify and organize the following fields if they are present:
                   icon: const Icon(Icons.camera_alt),
                   label: const Text("Scan Prescription"),
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFE6F4EA),
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
                 ),
@@ -227,6 +243,7 @@ Identify and organize the following fields if they are present:
                   icon: const Icon(Icons.photo_library),
                   label: const Text("Upload from Gallery"),
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFE6F4EA),
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
                 ),
@@ -266,10 +283,13 @@ Identify and organize the following fields if they are present:
                 ElevatedButton(
                   onPressed: _saveRecord,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Colors.teal,
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: const Text('Save Record'),
+                  child: const Text(
+                    'Save Record',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
               ],
             ],

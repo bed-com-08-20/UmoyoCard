@@ -1,4 +1,4 @@
-import 'dart:async'; // Added for Future.forEach
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -20,13 +20,12 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
   // --- Changed from int? to Set<int> for multi-select ---
   Set<int> _selectedIndices = {}; // To keep track of MULTIPLE selected items
 
-  // --- State variables from TimelineScreen (unchanged) ---
+  // --- State variables from TimelineScreen  ---
   final TextEditingController _searchController = TextEditingController();
   List<String> _availableMonths = [];
   bool _showSearchResults = false;
   List<int> _searchResults = []; // Stores original indices of search results
   bool _showMonthSuggestions = false;
-  // --- End unchanged state variables ---
 
   @override
   void initState() {
@@ -385,6 +384,7 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
               ),
               margin: const EdgeInsets.only(
                   bottom: 12.0), // Increased bottom margin
+              color: Color(0xFFF3E5F5),
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Row(
@@ -424,7 +424,7 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: Text(
-                                DateFormat('MMM dd, yyyy - HH:mm').format(date),
+                                DateFormat('dd MMM yyyy - HH:mm').format(date),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[
