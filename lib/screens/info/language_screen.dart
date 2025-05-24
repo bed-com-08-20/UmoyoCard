@@ -35,7 +35,6 @@ class _LanguageScreenState extends State<LanguageScreen> {
       _selectedLanguage = language;
     });
 
-    // In a real app, you would trigger localization changes here
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Language set to $language'),

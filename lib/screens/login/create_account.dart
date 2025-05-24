@@ -64,12 +64,12 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
         final day = parts[0].padLeft(2, '0');
         final month = parts[1].padLeft(2, '0');
         final year = parts[2];
-        return '$year-$month-$day'; // FHIR format (YYYY-MM-DD)
+        return '$year-$month-$day';
       }
     } catch (e) {
       debugPrint('Error formatting date: $e');
     }
-    return inputDate; // fallback
+    return inputDate;
   }
 
   Future<void> _saveToSharedPrefs() async {
@@ -205,7 +205,6 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
             keyboardType: TextInputType.datetime,
             validator: (value) {
               if (value?.isEmpty ?? true) return "Required field";
-              // Simple date format validation
               final parts = value!.split('/');
               if (parts.length != 3) return "Use DD/MM/YYYY format";
               try {

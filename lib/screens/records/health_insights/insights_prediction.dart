@@ -112,7 +112,6 @@ class InsightsPredictionsScreen extends StatelessWidget {
     );
   }
 
-  // Placeholder line chart (e.g. for BP)
   Widget _buildLineChart() {
     return LineChart(
       LineChartData(
@@ -138,7 +137,6 @@ class InsightsPredictionsScreen extends StatelessWidget {
     );
   }
 
-  // Placeholder area chart (for sugar)
   Widget _buildAreaChart() {
     return LineChart(
       LineChartData(
@@ -168,7 +166,6 @@ class InsightsPredictionsScreen extends StatelessWidget {
     );
   }
 
-  // Placeholder bar chart (for weight)
   Widget _buildBarChart() {
     return BarChart(
       BarChartData(

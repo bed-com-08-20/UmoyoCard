@@ -1,5 +1,3 @@
-//import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import 'package:fl_chart/fl_chart.dart';
@@ -8,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:intl/intl.dart';
 
-// Blood Sugar Record data model
 class BloodSugarRecord {
   final double value;
   final DateTime date;
@@ -75,7 +72,6 @@ class BloodSugarRecord {
     }
   }
 
-  // Formatted date and time string
   String get formattedDate {
     return DateFormat('dd MMM, HH:mm').format(date);
   }

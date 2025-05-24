@@ -120,14 +120,11 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.teal, // This makes the button teal
-                        foregroundColor:
-                            Colors.white, // This makes the text white
+                        backgroundColor: Colors.teal,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.all(16.0),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                              8.0), // Optional: adds rounded corners
+                          borderRadius: BorderRadius.circular(8.0),
                         ),
                       ),
                       child:
@@ -145,7 +142,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             const SizedBox(height: 10),
             const Text('Email: support@umoyocard.com'),
             const Text('Phone: +265 888 447 122'),
-            const Text('Address: 123 Health Tech Street, Digital City'),
+            const Text('Address: P.O Box 280 Zomba'),
           ],
         ),
       ),

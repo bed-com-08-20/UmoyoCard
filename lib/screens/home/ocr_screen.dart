@@ -19,9 +19,6 @@ class _OCRScreenState extends State<OCRScreen> {
   File? _imageFile;
   bool _isProcessing = false;
 
-  // Note: API Key should ideally be loaded securely, not hardcoded.
-  // For this example, using the one provided.
-  // If using dotenv, you would load it like: dotenv.env['GEMINI_API_KEY']
   final String _geminiApiKey = 'AIzaSyBKbJD5DGB1R9zzPWEmYRgStiwlFzcIB3Q';
   late final GenerativeModel _geminiModel;
 
@@ -148,14 +145,6 @@ Identify and organize the following fields if they are present:
 6. Doctor or Hospital Name
 8. Signs, symptoms, or Observations
 
-Extract verbatim text following SOAPIER format:
-Subjective: [exact patient-reported symptoms]
-Objective: [exact measurements/observations]
-Assessment: [exact diagnoses]
-Plan: [exact treatment instructions]
-Interventions: [exact procedures performed]
-Evaluation: [exact outcome notes]
-Revisions: [exact changes to care]
 
 Rules:
 1. Never modify content

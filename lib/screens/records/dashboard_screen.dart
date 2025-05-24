@@ -430,22 +430,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 12),
             if (_healthMetrics!.bloodSugarPrediction.isNotEmpty) ...[
-              // CHANGED: Replaced simple Text with RichText to style label differently
               RichText(
                 text: TextSpan(
                   style: DefaultTextStyle.of(context).style,
                   children: [
-                    // CHANGED: "Prediction:" label now in teal
                     TextSpan(
                       text: 'Prediction: ',
                       style: const TextStyle(
-                          color: Colors.teal, // NEW: Teal color for label
+                          color: Colors.teal,
                           fontSize: 14,
-                          decoration: TextDecoration.none
-                          // NEW: Consistent font size
-                          ),
+                          decoration: TextDecoration.none),
                     ),
-                    // CHANGED: Actual prediction text in default color
                     TextSpan(
                       text: _healthMetrics!.bloodSugarPrediction,
                       style: const TextStyle(
@@ -453,30 +448,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: Colors.black,
                         fontWeight: FontWeight.normal,
                         decoration: TextDecoration.none,
-                        // NEW: Consistent font size
-                        // REMOVED: No more bold styling
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 6),
-              // CHANGED: Replaced simple Text with RichText to style label differently
               RichText(
                 text: TextSpan(
                   style: DefaultTextStyle.of(context).style,
                   children: [
-                    // CHANGED: "Tip:" label now in teal
                     TextSpan(
                       text: 'Tip: ',
                       style: const TextStyle(
-                        color: Colors.teal, // NEW: Teal color for label
+                        color: Colors.teal,
                         fontSize: 14,
-                        decoration:
-                            TextDecoration.none, // NEW: Consistent font size
+                        decoration: TextDecoration.none,
                       ),
                     ),
-                    // CHANGED: Actual tip text in default color
                     TextSpan(
                       text: _healthMetrics!.bloodSugarTip,
                       style: const TextStyle(
@@ -484,7 +473,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: Colors.black,
                         fontWeight: FontWeight.normal,
                         decoration: TextDecoration.none,
-                        // NEW: Consistent font size
                       ),
                     ),
                   ],

@@ -54,7 +54,6 @@ class _AboutScreenState extends State<AboutScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
-            // Replaced logo with app icon
             const Icon(
               Icons.medical_services,
               size: 100,
@@ -122,13 +121,11 @@ class _AboutScreenState extends State<AboutScreen> {
                   onPressed: () => _launchURL('https://facebook.com/umoyocard'),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.campaign,
-                      size: 30), // Twitter alternative
+                  icon: const Icon(Icons.campaign, size: 30),
                   onPressed: () => _launchURL('https://twitter.com/umoyocard'),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.business,
-                      size: 30), // LinkedIn alternative
+                  icon: const Icon(Icons.business, size: 30),
                   onPressed: () =>
                       _launchURL('https://linkedin.com/company/umoyocard'),
                 ),
