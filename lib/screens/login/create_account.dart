@@ -51,9 +51,11 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _genderController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
 
   final Map<String, String?> _errorMessages = {};
   final Uuid _uuid = const Uuid();
+  String? _selectedGender;
 
   String _formatDateForFHIR(String inputDate) {
     try {
@@ -62,12 +64,12 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
         final day = parts[0].padLeft(2, '0');
         final month = parts[1].padLeft(2, '0');
         final year = parts[2];
-        return '$year-$month-$day'; // FHIR format (YYYY-MM-DD)
+        return '$year-$month-$day';
       }
     } catch (e) {
       debugPrint('Error formatting date: $e');
     }
-    return inputDate; // fallback
+    return inputDate;
   }
 
   Future<void> _saveToSharedPrefs() async {
@@ -100,10 +102,12 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
         prefs.setString('firstName', _firstNameController.text),
         if (_phoneController.text.isNotEmpty)
           prefs.setString('userPhone', _phoneController.text),
-        prefs.setString('email', _emailController.text),
+        if (_emailController.text.isNotEmpty)
+          prefs.setString('email', _emailController.text),
         prefs.setString('dob', dob),
-        if (_genderController.text.isNotEmpty)
-          prefs.setString('gender', _genderController.text),
+        if (_selectedGender != null)
+          prefs.setString('gender', _selectedGender!),
+        prefs.setString('address', _addressController.text),
       ]);
 
       // Verify the ID was saved correctly
@@ -198,10 +202,9 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
                 onPressed: () => _selectDate(context),
               ),
             ),
-            onTap: () => _selectDate(context),
+            keyboardType: TextInputType.datetime,
             validator: (value) {
               if (value?.isEmpty ?? true) return "Required field";
-              // Simple date format validation
               final parts = value!.split('/');
               if (parts.length != 3) return "Use DD/MM/YYYY format";
               try {
@@ -221,6 +224,21 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
           ),
           const SizedBox(height: 16),
           TextFormField(
+            controller: _addressController,
+            decoration: InputDecoration(
+              labelText: "Address*",
+              errorText: _errorMessages['address'],
+              border: const OutlineInputBorder(),
+            ),
+            // maxLines: 2,
+            keyboardType: TextInputType.streetAddress,
+            validator: (value) =>
+                value?.isEmpty ?? true ? "Required field" : null,
+            onChanged: (value) =>
+                setState(() => _errorMessages['address'] = null),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
             controller: _phoneController,
             decoration: InputDecoration(
               labelText: "Phone Number",
@@ -235,23 +253,31 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
           TextFormField(
             controller: _emailController,
             decoration: InputDecoration(
-              labelText: "Email Address*",
+              labelText: "Email Address",
               errorText: _errorMessages['email'],
               border: const OutlineInputBorder(),
             ),
             keyboardType: TextInputType.emailAddress,
-            validator: (value) =>
-                value?.isEmpty ?? true ? "Required field" : null,
             onChanged: (value) =>
                 setState(() => _errorMessages['email'] = null),
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _genderController,
+          DropdownButtonFormField<String>(
+            value: _selectedGender,
             decoration: const InputDecoration(
               labelText: "Gender",
               border: OutlineInputBorder(),
             ),
+            items: const [
+              DropdownMenuItem(value: 'Male', child: Text('Male')),
+              DropdownMenuItem(value: 'Female', child: Text('Female')),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedGender = value;
+                _genderController.text = value ?? '';
+              });
+            },
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -285,6 +311,7 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
     _phoneController.dispose();
     _emailController.dispose();
     _genderController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 }

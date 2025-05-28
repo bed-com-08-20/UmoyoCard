@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:umoyocard/screens/records/blood_pressure_screen.dart';
+import 'package:umoyocard/screens/records/health_insights/blood_pressure_screen.dart';
 import 'package:umoyocard/screens/records/health_insights/blood_sugar_screen.dart';
 
 class InsightsPredictionsScreen extends StatelessWidget {
@@ -112,7 +112,6 @@ class InsightsPredictionsScreen extends StatelessWidget {
     );
   }
 
-  // Placeholder line chart (e.g. for BP)
   Widget _buildLineChart() {
     return LineChart(
       LineChartData(
@@ -138,7 +137,6 @@ class InsightsPredictionsScreen extends StatelessWidget {
     );
   }
 
-  // Placeholder area chart (for sugar)
   Widget _buildAreaChart() {
     return LineChart(
       LineChartData(
@@ -168,7 +166,6 @@ class InsightsPredictionsScreen extends StatelessWidget {
     );
   }
 
-  // Placeholder bar chart (for weight)
   Widget _buildBarChart() {
     return BarChart(
       BarChartData(

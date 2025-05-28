@@ -4,6 +4,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:umoyocard/screens/records/analytics_helper.dart'
+    as analytics_helper;
 
 class OCRScreen extends StatefulWidget {
   const OCRScreen({super.key});
@@ -17,14 +19,14 @@ class _OCRScreenState extends State<OCRScreen> {
   File? _imageFile;
   bool _isProcessing = false;
 
-  final String _geminiApiKey = 'AIzaSyBjG13H2bbGtrQw_rHUyqRr82MS_6kp-A8';
+  final String _geminiApiKey = 'AIzaSyBKbJD5DGB1R9zzPWEmYRgStiwlFzcIB3Q';
   late final GenerativeModel _geminiModel;
 
   @override
   void initState() {
     super.initState();
     _geminiModel = GenerativeModel(
-      model: 'gemini-1.5-pro-latest',
+      model: 'gemini-2.0-flash',
       apiKey: _geminiApiKey,
     );
   }
@@ -46,6 +48,9 @@ class _OCRScreenState extends State<OCRScreen> {
     savedTexts.add(_extractedText);
     if (_imageFile != null) {
       savedImages.add(_imageFile!.path);
+    } else {
+      // Add an empty string placeholder if no image was saved for this entry
+      savedImages.add('');
     }
     savedDates.add(DateTime.now().toIso8601String());
 
@@ -53,15 +58,21 @@ class _OCRScreenState extends State<OCRScreen> {
     await prefs.setStringList('savedImages', savedImages);
     await prefs.setStringList('savedDates', savedDates);
 
+    // Trigger the analytics processing AFTER saving the data
+    // analytics_helper.triggerAnalyticsProcessing();
+    analytics_helper.triggerCompleteAnalyticsProcessing();
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Health record saved successfully!')),
     );
 
+    // Clear the current state after saving
     setState(() {
       _extractedText = '';
       _imageFile = null;
     });
 
+    // Optionally pop the screen after saving
     Navigator.of(context).pop();
   }
 
@@ -79,22 +90,34 @@ class _OCRScreenState extends State<OCRScreen> {
 
     if (pickedFile != null) {
       File imageFile = File(pickedFile.path);
+      // Save the image locally first so we have a persistent path
       String savedPath = await saveImageLocally(imageFile);
+
       setState(() {
-        _imageFile = File(savedPath);
-        _isProcessing = true;
+        _imageFile = File(savedPath); // Use the saved path
+        _extractedText = ''; // Clear previous text
+        _isProcessing = true; // Show loading indicator
       });
 
+      // Process OCR on the saved image file
       await _processOCR(_imageFile!);
 
       setState(() {
-        _isProcessing = false;
+        _isProcessing = false; // Hide loading indicator
       });
     }
   }
 
   // Use Gemini API to process OCR and enhance text
   Future<void> _processOCR(File imageFile) async {
+    if (_geminiApiKey == 'MISSING_API_KEY' || _geminiApiKey.isEmpty) {
+      setState(() {
+        _extractedText = "Error: API Key is missing. Cannot perform OCR.";
+        _isProcessing = false;
+      });
+      return;
+    }
+
     try {
       final imageBytes = await imageFile.readAsBytes();
 
@@ -117,10 +140,17 @@ Identify and organize the following fields if they are present:
 2. Medical Condition(s) or Diagnosis
 3. Medication Name(s)
 4. Dosage and Frequency
-5. Administration Instructions
 6. Doctor or Hospital Name
-7. Patient Information (Name, Age, etc.)
 8. Signs, symptoms, or Observations
+
+
+Rules:
+1. Never modify content
+2. Skip empty sections
+3. No interpretations
+4. No formatting
+5. No labels
+6. No comments
 ''';
 
       final content = Content(
@@ -142,6 +172,10 @@ Identify and organize the following fields if they are present:
         const SnackBar(
             content: Text('Failed to process image. Please try again.')),
       );
+      setState(() {
+        _extractedText =
+            "Error processing image: $e"; // Display error in text area
+      });
     }
   }
 
@@ -156,7 +190,7 @@ Identify and organize the following fields if they are present:
         title: const Text(
           'Medical Document Scan',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -186,6 +220,7 @@ Identify and organize the following fields if they are present:
                   icon: const Icon(Icons.camera_alt),
                   label: const Text("Scan Prescription"),
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFE6F4EA),
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
                 ),
@@ -195,13 +230,22 @@ Identify and organize the following fields if they are present:
                   icon: const Icon(Icons.photo_library),
                   label: const Text("Upload from Gallery"),
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFE6F4EA),
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
                 ),
               ],
               if (_imageFile != null) ...[
                 const SizedBox(height: 16.0),
-                Image.file(_imageFile!, height: 150, fit: BoxFit.cover),
+                // Display the image from the locally saved path
+                Image.file(
+                  _imageFile!,
+                  height: 150,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(child: Text('Could not load image.'));
+                  },
+                ),
               ],
               if (_extractedText.isNotEmpty) ...[
                 const SizedBox(height: 24.0),
@@ -226,10 +270,13 @@ Identify and organize the following fields if they are present:
                 ElevatedButton(
                   onPressed: _saveRecord,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Colors.teal,
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: const Text('Save Record'),
+                  child: const Text(
+                    'Save Record',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
               ],
             ],

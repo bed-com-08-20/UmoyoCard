@@ -53,7 +53,6 @@ class CreatePassword extends StatelessWidget {
   }
 }
 
-// Add these widget definitions if they don't exist elsewhere
 class PasswordTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;

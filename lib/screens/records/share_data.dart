@@ -1,8 +1,9 @@
-import 'dart:async'; // Added for Future.forEach
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:umoyocard/screens/login/patient_details.dart';
 import 'package:umoyocard/services/fhir_service.dart';
 
 class SharedDataRecord extends StatefulWidget {
@@ -16,22 +17,20 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
   List<String> savedTexts = [];
   List<String> savedImages = [];
   List<String> savedDates = [];
-  // ignore: prefer_final_fields
   Set<int> _selectedIndices = {}; // To keep track of MULTIPLE selected items
 
-  // --- State variables from TimelineScreen (unchanged) ---
+  // --- State variables from TimelineScreen  ---
   final TextEditingController _searchController = TextEditingController();
   List<String> _availableMonths = [];
   bool _showSearchResults = false;
   List<int> _searchResults = []; // Stores original indices of search results
   bool _showMonthSuggestions = false;
-  // --- End unchanged state variables ---
 
   @override
   void initState() {
     super.initState();
     _loadTimelineData();
-    _searchController.addListener(_onSearchChanged); // Add listener
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
@@ -50,7 +49,6 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
       final missingDates = savedTexts.length - savedDates.length;
       savedDates.addAll(List.generate(
           missingDates, (index) => DateTime.now().toIso8601String()));
-      // await _updatePreferences(); // Consider saving generated dates
     }
 
     final months = <String>{};
@@ -99,18 +97,8 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
       return;
     }
 
-    // --- MODIFIED: Show all available months/years as suggestions if query is not empty ---
     setState(() {
       _showMonthSuggestions = true;
-      // The list of suggestions will be filtered in _buildMonthNavigationHeader based on _searchController.text
-      // but the requirement is to *show* all if any letter is entered.
-      // To truly show *all* when *any* letter is typed, we would bypass the filter here.
-      // Let's interpret "when i just enter any letter all the dates with records to appear below search bar"
-      // as showing the full list of available months/years in the suggestion box as long as the input is not empty,
-      // filtered or not. The current filtering logic is useful, so I will keep it, but ensure suggestions show on *any* input.
-      // The original code already shows filtered suggestions. The prompt might be asking for the unfiltered list?
-      // Let's stick to showing filtered suggestions for usability, but ensure they appear as soon as text is entered.
-      // The `_showMonthSuggestions = true;` above already handles making the list visible on any input.
     });
 
     // Check if the query exactly matches an available month/year for triggering a search
@@ -167,7 +155,6 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
     });
   }
 
-  // --- Renamed and modified to handle multiple items ---
   Future<void> _sendSelectedItemsToFHIR() async {
     if (_selectedIndices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -221,18 +208,15 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
           content: Text('Sharing $count $itemS...'),
-          duration: Duration(seconds: count + 2)), // Adjust duration estimate
+          duration: Duration(seconds: count + 2)),
     );
 
-    // Send each selected item sequentially
-    // Using Future.forEach to handle async calls in sequence
     await Future.forEach(itemsToSend, (int index) async {
-      // Ensure index is still valid (though unlikely to change here)
       if (index < 0 || index >= savedTexts.length) {
         // ignore: avoid_print
         print('Skipping invalid index $index during send.');
         failureCount++;
-        return; // Skip this item
+        return;
       }
       try {
         final text = savedTexts[index];
@@ -244,8 +228,6 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
         // ignore: avoid_print
         print('Attempting to send item index: $index'); // Debug log
 
-        // *** Assuming FHIRService.sendDocumentToFHIR handles its own success/failure feedback ***
-        // *** OR throws an exception on failure ***
         await FHIRService.sendDocumentToFHIR(
           documentText: text,
           imagePath: image,
@@ -253,10 +235,10 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
           context:
               context, // Pass context if service needs it for feedback (it currently does)
         );
-        print('Successfully processed item index: $index'); // Debug log
+        print('Successfully processed item index: $index');
         successCount++;
       } catch (e) {
-        print('Failed to send item index $index: $e'); // Log the error
+        print('Failed to send item index $index: $e');
         failureCount++;
         // Optionally show an error immediately, but could be overwhelming
         if (firstError) {
@@ -341,7 +323,6 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
     }
   }
 
-  // --- Modified for multi-select, checkbox inside, and styled text ---
   Widget _buildTimelineItem(int index) {
     if (index < 0 || index >= savedDates.length) {
       return const SizedBox.shrink();
@@ -362,7 +343,6 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
     final bool isSelected = _selectedIndices.contains(index);
 
     return IntrinsicHeight(
-      // Use IntrinsicHeight to align checkbox with content
       child: Row(
         crossAxisAlignment:
             CrossAxisAlignment.stretch, // Stretch children to match height
@@ -391,13 +371,12 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
               ),
               margin: const EdgeInsets.only(
                   bottom: 12.0), // Increased bottom margin
+              color: Color(0xFFF3E5F5),
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Row(
-                  // Use Row to place Checkbox and content side-by-side
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // --- Checkbox inside the card ---
                     Checkbox(
                       value: isSelected,
                       onChanged: (bool? value) {
@@ -430,7 +409,7 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: Text(
-                                DateFormat('MMM dd, yyyy - HH:mm').format(date),
+                                DateFormat('dd MMM yyyy - HH:mm').format(date),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[
@@ -591,8 +570,7 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
             ),
           ),
           // --- Suggestions Box ---
-          if (_showMonthSuggestions &&
-              displaySuggestions.isNotEmpty) // Use displaySuggestions here
+          if (_showMonthSuggestions && displaySuggestions.isNotEmpty)
             Material(
               elevation: 4.0,
               borderRadius: BorderRadius.circular(4.0),
@@ -603,11 +581,9 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
                 ),
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount:
-                      displaySuggestions.length, // Use displaySuggestions count
+                  itemCount: displaySuggestions.length,
                   itemBuilder: (context, index) {
-                    final month = displaySuggestions[
-                        index]; // Get from displaySuggestions
+                    final month = displaySuggestions[index];
                     return ListTile(
                       title: Text(month),
                       dense: true,
@@ -728,12 +704,31 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
               ? 'Share Data'
               : '${_selectedIndices.length} Selected',
           style: const TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         actions: [
+          // Patient details button moved to actions
+          IconButton(
+            icon: const Icon(Icons.verified_user),
+            tooltip: 'View Patient Details',
+            onPressed: () async {
+              String currentPatientId = 'f966f58b-a727-46bc-829d-0f56f551e311';
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      PatientDetailsScreen(patientId: currentPatientId),
+                ),
+              );
+            },
+          ),
           // --- Add a Clear Selection button to AppBar ---
           if (_selectedIndices.isNotEmpty)
             IconButton(
@@ -744,7 +739,7 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
                   _selectedIndices.clear();
                 });
               },
-            )
+            ),
         ],
       ),
       body: SafeArea(
@@ -798,8 +793,7 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
                 onRefresh: _loadTimelineData,
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0), // Adjusted padding
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   children: [
                     if (_showSearchResults)
                       // --- Display Search Results ---
@@ -861,7 +855,6 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
               ),
             ),
 
-            // --- FHIR Button Area (Modified for multi-select) ---
             if (_selectedIndices
                 .isNotEmpty) // Show button only when items are selected
               Padding(
@@ -870,8 +863,7 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     // Use ElevatedButton.icon
-                    icon: const Icon(Icons.share,
-                        color: Colors.white), // Add share icon
+                    icon: const Icon(Icons.share, color: Colors.white),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal,
                       padding: const EdgeInsets.symmetric(vertical: 15),
