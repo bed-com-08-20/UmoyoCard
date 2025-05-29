@@ -6,6 +6,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:umoyocard/screens/login/patient_details.dart';
 import 'package:umoyocard/services/fhir_service.dart';
 
+/// A screen for selecting and sharing medical timeline entries with a FHIR server.
+///
+/// This screen allows users to:
+/// - View their medical timeline entries grouped by month
+/// - Search entries by month/year
+/// - Select multiple entries for sharing
+/// - Send selected entries to a FHIR server
+/// - View patient details
 class SharedDataRecord extends StatefulWidget {
   const SharedDataRecord({super.key});
 
@@ -13,6 +21,13 @@ class SharedDataRecord extends StatefulWidget {
   State<SharedDataRecord> createState() => _SharedDataRecordState();
 }
 
+/// The state class for [SharedDataRecord].
+///
+/// Manages:
+/// - Loading and displaying timeline entries
+/// - Search functionality
+/// - Selection of multiple entries
+/// - Sending data to FHIR server
 class _SharedDataRecordState extends State<SharedDataRecord> {
   List<String> savedTexts = [];
   List<String> savedImages = [];
@@ -27,12 +42,22 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
   List<int> _searchResults = []; // Stores original indices of search results
   bool _showMonthSuggestions = false;
 
+  String? _currentPatientId;
+
   @override
   void initState() {
     super.initState();
     _loadTimelineData();
     _searchController.addListener(_onSearchChanged);
+    _loadPatientId();
   }
+
+  Future<void> _loadPatientId() async {
+  final id = await FHIRService.getPatientId();
+  setState(() {
+    _currentPatientId = id;
+  });
+}
 
   @override
   void dispose() {
@@ -40,6 +65,13 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
     super.dispose();
   }
 
+  /// Loads timeline data from SharedPreferences and initializes the view.
+  ///
+  /// This method:
+  /// - Loads saved texts, images and dates
+  /// - Ensures dates exist for all entries
+  /// - Extracts available months for searching
+  /// - Resets search and selection state
   Future<void> _loadTimelineData() async {
     final prefs = await SharedPreferences.getInstance();
     savedTexts = prefs.getStringList('savedTexts') ?? [];
@@ -84,6 +116,12 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
     });
   }
 
+  /// Handles changes to the search input field.
+  ///
+  /// This method:
+  /// - Clears search results when query is empty
+  /// - Shows month suggestions as user types
+  /// - Triggers search when exact month match is entered
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
     if (query.isEmpty) {
@@ -153,6 +191,14 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
     });
   }
 
+  /// Sends selected timeline entries to the FHIR server.
+  ///
+  /// This method:
+  /// - Shows error if no items selected
+  /// - Displays confirmation dialog
+  /// - Sends each selected item to FHIR
+  /// - Provides progress feedback via SnackBars
+  /// - Shows final success/failure summary
   Future<void> _sendSelectedItemsToFHIR() async {
     if (_selectedIndices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -317,6 +363,18 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
     }
   }
 
+  /// Builds a single timeline entry widget.
+  ///
+  /// Parameters:
+  /// - [index]: The index of the timeline entry to build
+  ///
+  /// Returns:
+  /// - A widget displaying the timeline entry with:
+  ///   - Checkbox for selection
+  ///   - Date/time
+  ///   - Entry text
+  ///   - Thumbnail image (if available)
+  ///   - Visual styling based on selection state
   Widget _buildTimelineItem(int index) {
     if (index < 0 || index >= savedDates.length) {
       return const SizedBox.shrink();
@@ -514,6 +572,13 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
     return indices;
   }
 
+  /// Builds the search header widget with month suggestions.
+  ///
+  /// Returns:
+  /// - A widget containing:
+  ///   - Title
+  ///   - Search field
+  ///   - Month suggestions (when typing)
   Widget _buildMonthNavigationHeader() {
     // --- MODIFIED: Suggestions show all available months if search is not empty ---
     final List<String> monthSuggestions = _searchController.text.isNotEmpty
@@ -610,7 +675,14 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
     );
   }
 
-  // --- Modified to include a "Select All" button ---
+  /// Builds a header for a month section with select/deselect all functionality.
+  ///
+  /// Parameters:
+  /// - [date]: The date representing the month/year
+  /// - [monthIndices]: List of indices belonging to this month
+  ///
+  /// Returns:
+  /// - A widget displaying the month header with select/deselect all button
   Widget _buildDateSectionHeader(DateTime date, List<int> monthIndices) {
     // Check if all items in this month are already selected
     final bool allSelected = monthIndices.isNotEmpty &&
@@ -715,17 +787,22 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
         actions: [
           // Patient details button moved to actions
           IconButton(
-            icon: const Icon(Icons.verified_user),
+            icon: _currentPatientId == null
+                ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                : const Icon(Icons.verified_user),
             tooltip: 'View Patient Details',
-            onPressed: () async {
-              String currentPatientId = 'f966f58b-a727-46bc-829d-0f56f551e311';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      PatientDetailsScreen(patientId: currentPatientId),
-                ),
-              );
+            onPressed: _currentPatientId == null
+                ? null
+                : () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PatientDetailsScreen(
+                          // USING THE DYNAMIC ID HERE
+                          patientId: _currentPatientId!,
+                        ),
+                      ),
+                    );
             },
           ),
           // --- Add a Clear Selection button to AppBar ---

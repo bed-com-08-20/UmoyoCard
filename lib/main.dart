@@ -5,15 +5,15 @@ import 'package:umoyocard/providers/password_providers.dart';
 import 'package:umoyocard/screens/login/login_screen.dart';
 import 'package:umoyocard/screens/home/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase/firebase_options.dart';
+//import 'firebase/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // await Firebase.initializeApp(
+  //   options: DefaultFirebaseOptions.currentPlatform,
+  // );
 
   runApp(
     ChangeNotifierProvider(
