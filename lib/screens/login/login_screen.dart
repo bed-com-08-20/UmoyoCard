@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:umoyocard/screens/home/home_screen.dart';
 import 'package:umoyocard/screens/login/create_account.dart';
-<<<<<<< HEAD
-
-=======
-//import 'create_password_screen.dart';
-import '../home/home_screen.dart';
->>>>>>> wadi
+import 'package:umoyocard/screens/login/forget_password.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,28 +12,64 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _nationalIdController = TextEditingController();
+  final TextEditingController _emailOrPhoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _isLoading = false;
 
-  void handleLogin() {
-    String nationalId = _nationalIdController.text;
-    String password = _passwordController.text;
+  void handleLogin() async {
+    String emailOrPhone = _emailOrPhoneController.text.trim();
+    String password = _passwordController.text.trim();
 
-    if (nationalId.isEmpty) {
+    if (emailOrPhone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your Email')),
+        const SnackBar(content: Text('Please enter your Email or Phone')),
       );
       return;
     }
 
-    if (password.isNotEmpty) {
-      // Navigate to LoadingScreen first
-      Navigator.pushReplacementNamed(context, '/loading');
-    } else {
+    if (password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter your password!')),
       );
+      return;
     }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final storedEmail = prefs.getString('email');
+    final storedPhone = prefs.getString('phone');
+    final storedPassword = prefs.getString('password');
+
+    if ((emailOrPhone == storedEmail || emailOrPhone == storedPhone) &&
+        password == storedPassword) {
+      // Store login times
+      final currentLogin = DateTime.now().toString();
+      final previousLogin = prefs.getString('lastLogin');
+
+      await prefs.setString('lastLogin', currentLogin);
+      if (previousLogin != null) {
+        await prefs.setString('previousLogin', previousLogin);
+      }
+      await prefs.setBool('isLoggedIn', true);
+
+      // Navigate to home screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid credentials! Please try again.')),
+      );
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -68,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 32.0),
               TextField(
-                controller: _nationalIdController,
+                controller: _emailOrPhoneController,
                 decoration: InputDecoration(
                   labelText: 'Phone number or Email',
                   border: OutlineInputBorder(
@@ -79,35 +112,33 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16.0),
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.0),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24.0),
-              ElevatedButton(
-                onPressed: handleLogin,
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
-                  padding: const EdgeInsets.all(16.0),
-                ),
-                child: const Text(
-                  'Login',
-                  style: TextStyle(fontSize: 16.0),
                 ),
               ),
-              const SizedBox(height: 16.0),
+              const SizedBox(height: 10.0),
               TextButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text(
-                            'Forgot Password Screen not yet implemented!')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ForgetPasswordScreen()),
                   );
                 },
                 child: const Text(
@@ -115,18 +146,49 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(fontSize: 16.0, color: Colors.green),
                 ),
               ),
-              const SizedBox(height: 32.0),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => CreateAccount()),
-                  );
-                },
-                child: const Text(
-                  'Create New Account',
-                  style: TextStyle(fontSize: 16.0, color: Colors.blue),
+              const SizedBox(height: 24.0),
+              ElevatedButton(
+                onPressed: _isLoading ? null : handleLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  padding: const EdgeInsets.all(16.0),
                 ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+              const SizedBox(height: 16.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Don't have an account?",
+                    style: TextStyle(fontSize: 16.0),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => CreateAccount()),
+                      );
+                    },
+                    child: const Text(
+                      'Create Account',
+                      style: TextStyle(fontSize: 16.0, color: Colors.blue),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

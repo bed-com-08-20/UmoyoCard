@@ -1,29 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:umoyocard/screens/records/health_insights/health_insights.dart';
-import 'package:umoyocard/screens/records/medica_history/medical_history.dart';
-import 'package:umoyocard/screens/records/shared_data_record.dart';
-import 'timeline_screen.dart';
+import 'package:umoyocard/screens/records/dashboard_screen.dart';
+import 'package:umoyocard/screens/records/share_data.dart';
+import 'package:umoyocard/screens/records/timeline_screen.dart';
 
 class RecordScreen extends StatelessWidget {
   const RecordScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Records',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.blueAccent,
-          ),
-        ),
-      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -34,7 +18,6 @@ class RecordScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
-            // Grid layout for record cards
             Expanded(
               child: Column(
                 children: [
@@ -43,15 +26,9 @@ class RecordScreen extends StatelessWidget {
                       children: [
                         _buildRecordCard(
                           context,
-                          'Timeline',
+                          'Health Passport',
                           Icons.timeline,
                           const TimelineScreen(),
-                        ),
-                        _buildRecordCard(
-                          context,
-                          'Health Insights',
-                          Icons.insights,
-                          const HealthInsightsScreen(),
                         ),
                       ],
                     ),
@@ -61,15 +38,15 @@ class RecordScreen extends StatelessWidget {
                       children: [
                         _buildRecordCard(
                           context,
-                          'Medical History',
-                          Icons.history,
-                          const MedicalHistoryScreen(),
+                          'Predicitive Analytics',
+                          Icons.insights,
+                          DashboardScreen(),
                         ),
                         _buildRecordCard(
                           context,
-                          'Shared Data',
+                          'Share Data',
                           Icons.share,
-                          SharedDataRecordScreen(),
+                          const SharedDataRecord(),
                         ),
                       ],
                     ),
