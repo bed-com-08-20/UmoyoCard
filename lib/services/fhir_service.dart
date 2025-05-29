@@ -8,6 +8,21 @@ import 'package:pdf/widgets.dart' as pw;
 class FHIRService {
   static const String _fhirServerBaseUrl = 'http://localhost:8080/fhir';
 
+ static Future<String?> getPatientId({bool keepPrefix = false}) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getString('userId');
+    
+    if (id == null) return null;
+    
+    // Remove 'pat-' prefix unless explicitly requested to keep it
+    return  id.replaceFirst('pat-', '');
+  } catch (e) {
+    debugPrint('Error getting patient ID: $e');
+    return null;
+  }
+}
+
   static Future<void> sendDocumentToFHIR({
     required String documentText,
     required String imagePath,
