@@ -26,7 +26,7 @@ class RecordScreen extends StatelessWidget {
                       children: [
                         _buildRecordCard(
                           context,
-                          'Timeline',
+                          'Health Passport',
                           Icons.timeline,
                           const TimelineScreen(),
                         ),

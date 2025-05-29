@@ -7,6 +7,11 @@ import 'package:umoyocard/screens/records/analytics_helper.dart'
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
+/// A screen that displays health metrics analytics and predictions.
+///
+/// This screen shows visual charts for blood pressure and blood sugar data,
+/// along with predictive analysis and health tips based on the user's medical history.
+/// Data is cached locally and updated periodically.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -14,6 +19,10 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
+/// The state class for DashboardScreen.
+///
+/// Manages the loading, caching, and display of health analytics data,
+/// including blood pressure and blood sugar metrics.
 class _DashboardScreenState extends State<DashboardScreen> {
   String _analyticsResult = '';
   String _errorMessage = '';
@@ -27,6 +36,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _initializeWithCachedData();
   }
 
+  /// Initializes the screen with cached data from SharedPreferences.
+  ///
+  /// Loads previously saved analysis results and health metrics from local storage.
+  /// If cached data exists, it will be displayed immediately while fresh data
+  /// is fetched in the background.
   Future<void> _initializeWithCachedData() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -82,6 +96,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _checkForUpdates();
   }
 
+  /// Checks for new data updates in the background.
+  ///
+  /// Compares the current timeline data hash with the last saved hash to determine
+  /// if new data processing is needed. If new data is found, it triggers processNewData.
   Future<void> _checkForUpdates() async {
     if (_isLoading) return;
 
@@ -114,6 +132,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  /// Processes new timeline data and updates the cache.
+  ///
+  /// Parameters:
+  /// - prefs: SharedPreferences instance for local storage
+  /// - timelineData: The raw timeline data string to process
+  /// - currentHash: The hash of the current timeline data for change detection
+  ///
+  /// Extracts health metrics, runs predictive analysis, and updates the UI with results.
   Future<void> _processNewData(
       SharedPreferences prefs, String timelineData, String currentHash) async {
     try {
@@ -161,6 +187,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  /// Builds the blood pressure card widget with chart and analysis.
+  ///
+  /// Returns:
+  /// - A Card widget displaying blood pressure trends over time,
+  ///   with systolic and diastolic values plotted on a line chart.
+  /// - If no data is available, returns a placeholder card.
   Widget _buildBloodPressureCard() {
     if (!_hasData || _healthMetrics == null) {
       return _buildPlaceholderCard('🩸 Blood Pressure', 'No data available');
@@ -217,6 +249,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           return const Text('');
                         },
                       ),
+                      axisNameWidget: Text('Dates (month/day)',
+                          style: TextStyle(fontSize: 12)),
+                      // style: const TextStyle(fontSize: 10),
                     ),
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
@@ -226,6 +261,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               style: const TextStyle(fontSize: 10));
                         },
                       ),
+                      axisNameWidget: Text('Blood Pressure (mmHg)',
+                          style: TextStyle(fontSize: 12)), // Add this line
                     ),
                     rightTitles: const AxisTitles(),
                     topTitles: const AxisTitles(),
@@ -336,6 +373,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  /// Builds the blood sugar card widget with chart and analysis.
+  ///
+  /// Returns:
+  /// - A [Card] widget displaying blood sugar trends over time on a line chart.
+  /// - If no data is available, returns a placeholder card.
   Widget _buildBloodSugarCard() {
     if (!_hasData || _healthMetrics == null) {
       return _buildPlaceholderCard('🍬 Blood Sugar', 'No data available');
@@ -389,6 +431,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           return const Text('');
                         },
                       ),
+                      axisNameWidget: Text('Dates (month/day)',
+                          style: TextStyle(fontSize: 12)),
                     ),
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
@@ -398,6 +442,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               style: const TextStyle(fontSize: 10));
                         },
                       ),
+                      axisNameWidget: Text('Blood Sugar (mg/dL)',
+                          style: TextStyle(fontSize: 12)),
                     ),
                     rightTitles: const AxisTitles(),
                     topTitles: const AxisTitles(),
@@ -485,6 +531,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  /// Builds a placeholder card when no data is available.
+  ///
+  /// Parameters:
+  /// - title: The title to display on the card
+  /// - message: The message to show in the card body
+  ///
+  /// Returns:
+  /// - A Card widget with the given title and message
   Widget _buildPlaceholderCard(String title, String message) {
     return Card(
       elevation: 4,

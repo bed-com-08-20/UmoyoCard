@@ -9,7 +9,14 @@ import 'package:umoyocard/screens/home/ocr_screen.dart';
 import 'package:umoyocard/screens/records/timeline_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// ignore: use_key_in_widget_constructors
+/// The main home screen of the application that serves as a navigation hub.
+///
+/// This screen implements a bottom navigation bar to switch between three main sections:
+/// - Home (default view with quick links)
+/// - Records (health data management)
+/// - Profile (user settings and information)
+///
+/// Uses a [PageView] to handle smooth transitions between sections
 class HomeScreen extends StatefulWidget {
   @override
   // ignore: library_private_types_in_public_api
@@ -26,6 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
     ProfileScreen(),
   ];
 
+  /// Handles navigation when a bottom navigation item is tapped
+  ///
+  /// @param index The index of the tapped item (0 for Home, 1 for Records, 2 for Profile)
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -44,7 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // Function to get the AppBar based on the selected index
+  /// Builds an appropriate AppBar based on the currently selected section
+  ///
+  /// @return An [AppBar] configured for the current section with appropriate
+  ///         title and actions (like profile header)
   AppBar _getAppBar() {
     String title = '';
     List<Widget> actions = [];
@@ -116,6 +129,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Builds a custom icon for the bottom navigation bar
+  ///
+  /// @param iconData The icon to display
+  /// @param index The index this icon represents
+  /// @return A [Widget] containing the styled icon with appropriate label
   Widget _buildIcon(IconData iconData, int index) {
     bool isSelected = _selectedIndex == index;
 
@@ -148,6 +166,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Gets the label text for a bottom navigation item
+  ///
+  /// @param index The index of the navigation item
+  /// @return The appropriate label text for the given index
   String _getLabel(int index) {
     switch (index) {
       case 0:
@@ -162,7 +184,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ignore: use_key_in_widget_constructors
+/// The content widget for the Home section of the application
+///
+/// Displays a welcome message and quick links to various features:
+/// - Scan Health Passport
+/// - Recent Timeline
+/// - Blood Pressure
+/// - Blood Sugar
 class HomeContent extends StatefulWidget {
   @override
   // ignore: library_private_types_in_public_api
@@ -254,6 +282,13 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
+  /// Builds a card widget for a quick link
+  ///
+  /// @param context The build context
+  /// @param title The title to display on the card
+  /// @param icon The icon to display on the card
+  /// @param onTap The callback when the card is tapped
+  /// @return A [Widget] representing the quick link card
   Widget _buildQuickLinkCard(
       BuildContext context, String title, IconData icon, VoidCallback onTap) {
     if (title == 'Recent Timeline') {
@@ -292,6 +327,10 @@ class _HomeContentState extends State<HomeContent> {
     );
   }
 
+  /// Handles navigation when a quick link is tapped
+  ///
+  /// @param context The build context
+  /// @param label The label of the quick link that was tapped
   void _handleQuickLinkTap(BuildContext context, String label) {
     if (label == 'Scan Health Passport') {
       Navigator.push(
@@ -321,6 +360,10 @@ class _HomeContentState extends State<HomeContent> {
   }
 }
 
+/// A card widget that displays the user's most recent hospital visit date
+///
+/// Automatically updates every 2 seconds to check for new visit data.
+/// Extracts dates from saved text using pattern matching.
 class RecentTimelineCard extends StatefulWidget {
   final VoidCallback? onTap;
   // ignore: use_super_parameters
@@ -345,6 +388,17 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
     });
   }
 
+  /// Extracts a date string from the given text using pattern matching
+  ///
+  /// Supports multiple date formats including:
+  /// - 13/01/2025 or 13-01-2025
+  /// - 13/Jan/2025
+  /// - 13 Jan 2025
+  /// - Visit: 13/01/2025
+  /// - Visit: 13/Jan/2025
+  ///
+  /// @param text The text to search for dates
+  /// @return The extracted date string, or empty string if no date found
   String _extractDate(String text) {
     final datePattern = RegExp(
       r'(\b\d{1,2}\s*[/-]\s*\d{1,2}\s*[/-]\s*\d{2,4}\b)|' // 13 / 01 / 2025 or 13-01-2025

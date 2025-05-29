@@ -112,9 +112,21 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     List<BloodSugarRecord> bloodSugarReadings = [];
 
     final bloodSugarRegex = RegExp(
-      r'(?:blood[\s-]*sugar|sugar|glucose|blood[\s-]*glucose|BG|BGL|bs|blood sugar level|blood glucose level)\s*[=:\-]\s*(\d+[,.]?\d*)\s*(mg\s*\/?\s*dl|mmol\s*\/?\s*l|mg|mmol|l)?',
+      r'(?:blood[\s-]*sugar|sugar|glucose|blood[\s-]*glucose|BG|BGL|bs|blood sugar level|blood glucose level)\s*[:\-]?\s*(\d+[,.]?\d*)\s*(mg\s*\/?\s*dl|mmol\s*\/?\s*l|mg|mmol|l)?',
       caseSensitive: false,
     );
+    // final bloodSugarRegex = RegExp(
+    //   r'(?:blood[\s-]*sugar|sugar|glucose|blood[\s-]*glucose|BG|BGL|bs|blood sugar level|blood glucose level|RBS)\s*[=:\-]\s*(\d+[,.]?\d*)\s*(mg\s*\/?\s*dl|mmol\s*\/?\s*l|mg|mmol|l)?',
+    //   caseSensitive: false,
+    // );
+    // final bloodSugarRegex = RegExp(
+    //   r'(?:blood[\s-]*sugar|sugar|glucose|blood[\s-]*glucose|BG|BGL|bs|blood sugar level|blood glucose level|RBS)\s*(?:[=:\-]*\s*)?(\d+[,.]?\d*)\s*(mg\s*\/?\s*dl|mmol\s*\/?\s*l|mg|mmol|l)?',
+    //   caseSensitive: false,
+    // );
+    // final bloodSugarRegex = RegExp(
+    //   r'(?:blood[\s-]*sugar|sugar|glucose|blood[\s-]*glucose|BG|BGL|bs|blood sugar level|blood glucose level|RBS)\s*[:\-]?\s*(\d+[,.]?\d*)\s*(mg\s*\/?\s*dl|mmol\s*\/?\s*l|mg|mmol|l)?',
+    //   caseSensitive: false,
+    // );
 
     for (int i = 0; i < timelineTexts.length; i++) {
       final text = timelineTexts[i];
@@ -420,7 +432,7 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                     axisNameWidget: const Padding(
                       padding: EdgeInsets.only(top: 8.0),
                       child: Text(
-                        'Record number',
+                        'Dates(month/day)',
                         style: TextStyle(fontSize: 12),
                       ),
                     ),
@@ -431,7 +443,8 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
                       getTitlesWidget: (value, meta) => Padding(
                         padding: const EdgeInsets.only(top: 4.0),
                         child: Text(
-                          '${value.toInt() + 1}',
+                          DateFormat('MM/dd')
+                              .format(displayRecords[value.toInt()].date),
                           style: const TextStyle(fontSize: 10),
                         ),
                       ),

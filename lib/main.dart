@@ -7,6 +7,7 @@ import 'package:umoyocard/screens/home/home_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => PasswordProvider(),
