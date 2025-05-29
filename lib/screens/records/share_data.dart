@@ -790,7 +790,7 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
             icon: _currentPatientId == null
                 ? const CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2)
-                : const Icon(Icons.verified_user),
+                : const Icon(Icons.remove_red_eye),
             tooltip: 'View Patient Details',
             onPressed: _currentPatientId == null
                 ? null
