@@ -715,7 +715,7 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
         actions: [
           // Patient details button moved to actions
           IconButton(
-            icon: const Icon(Icons.verified_user),
+            icon: const Icon(Icons.remove_red_eye),
             tooltip: 'View Patient Details',
             onPressed: () async {
               String currentPatientId = '2f9b6687-ff0c-42b7-8962-e4655df245a9';
