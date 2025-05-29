@@ -113,9 +113,21 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
     List<BloodSugarRecord> bloodSugarReadings = [];
 
     final bloodSugarRegex = RegExp(
-      r'(?:blood[\s-]*sugar|sugar|glucose|blood[\s-]*glucose|BG|BGL|bs|blood sugar level|blood glucose level)\s*[=:\-]\s*(\d+[,.]?\d*)\s*(mg\s*\/?\s*dl|mmol\s*\/?\s*l|mg|mmol|l)?',
+      r'(?:blood[\s-]*sugar|sugar|glucose|blood[\s-]*glucose|BG|BGL|bs|blood sugar level|blood glucose level)\s*[:\-]?\s*(\d+[,.]?\d*)\s*(mg\s*\/?\s*dl|mmol\s*\/?\s*l|mg|mmol|l)?',
       caseSensitive: false,
     );
+    // final bloodSugarRegex = RegExp(
+    //   r'(?:blood[\s-]*sugar|sugar|glucose|blood[\s-]*glucose|BG|BGL|bs|blood sugar level|blood glucose level|RBS)\s*[=:\-]\s*(\d+[,.]?\d*)\s*(mg\s*\/?\s*dl|mmol\s*\/?\s*l|mg|mmol|l)?',
+    //   caseSensitive: false,
+    // );
+    // final bloodSugarRegex = RegExp(
+    //   r'(?:blood[\s-]*sugar|sugar|glucose|blood[\s-]*glucose|BG|BGL|bs|blood sugar level|blood glucose level|RBS)\s*(?:[=:\-]*\s*)?(\d+[,.]?\d*)\s*(mg\s*\/?\s*dl|mmol\s*\/?\s*l|mg|mmol|l)?',
+    //   caseSensitive: false,
+    // );
+    // final bloodSugarRegex = RegExp(
+    //   r'(?:blood[\s-]*sugar|sugar|glucose|blood[\s-]*glucose|BG|BGL|bs|blood sugar level|blood glucose level|RBS)\s*[:\-]?\s*(\d+[,.]?\d*)\s*(mg\s*\/?\s*dl|mmol\s*\/?\s*l|mg|mmol|l)?',
+    //   caseSensitive: false,
+    // );
 
     for (int i = 0; i < timelineTexts.length; i++) {
       final text = timelineTexts[i];

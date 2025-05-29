@@ -7,6 +7,15 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:umoyocard/screens/records/analytics_helper.dart'
     as analytics_helper;
 
+/// A screen for Optical Character Recognition (OCR) functionality to digitize health records.
+///
+/// This screen allows users to:
+/// - Capture images of health documents using the device camera
+/// - Upload images from the device gallery
+/// - Process the images to extract text using Gemini AI
+/// - Save the extracted health records to local storage
+///
+/// The extracted data is stored in SharedPreferences for persistence and future reference.
 class OCRScreen extends StatefulWidget {
   const OCRScreen({super.key});
 
@@ -31,7 +40,14 @@ class _OCRScreenState extends State<OCRScreen> {
     );
   }
 
-  // Save record to SharedPreferences
+  /// Saves the extracted health record to SharedPreferences storage.
+  ///
+  /// Stores three pieces of information for each record:
+  /// 1. The extracted text
+  /// 2. The path to the associated image (if any)
+  /// 3. The timestamp when the record was saved
+  ///
+  /// Also triggers analytics processing after saving the data.
   Future<void> _saveRecord() async {
     if (_extractedText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -76,7 +92,9 @@ class _OCRScreenState extends State<OCRScreen> {
     Navigator.of(context).pop();
   }
 
-  // Save image locally
+  /// Saves an image file to the device's local storage.
+  /// @param image The image file to be saved
+  /// @return A [Future<String>] containing the path where the image was saved
   Future<String> saveImageLocally(File image) async {
     final directory = await getApplicationDocumentsDirectory();
     final imagePath =
@@ -111,6 +129,15 @@ class _OCRScreenState extends State<OCRScreen> {
   }
 
   // Use Gemini API to process OCR and enhance text
+  /// Processes the selected image using Gemini AI to extract health record information.
+  ///
+  /// The method:
+  /// 1. Checks for a valid API key
+  /// 2. Reads the image file bytes
+  /// 3. Sends the image and processing instructions to Gemini AI
+  /// 4. Updates the UI with the extracted text or error message
+  ///
+  /// @param imageFile The image file to process
   Future<void> _processOCR(File imageFile) async {
     if (_geminiApiKey == 'MISSING_API_KEY' || _geminiApiKey.isEmpty) {
       setState(() {

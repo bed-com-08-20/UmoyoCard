@@ -718,7 +718,7 @@ class _SharedDataRecordState extends State<SharedDataRecord> {
             icon: const Icon(Icons.verified_user),
             tooltip: 'View Patient Details',
             onPressed: () async {
-              String currentPatientId = 'f966f58b-a727-46bc-829d-0f56f551e311';
+              String currentPatientId = '2f9b6687-ff0c-42b7-8962-e4655df245a9';
               Navigator.push(
                 context,
                 MaterialPageRoute(
