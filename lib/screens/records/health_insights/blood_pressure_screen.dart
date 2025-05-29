@@ -3,6 +3,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
+// Represents a single blood pressure reading with associated metadata. 
+// This class stores systolic and diastolic values, the date of recording,
+// the blood pressure category (e.g., "Normal", "Hypertension Stage 1"),
+// and a color representing the category for visualization purposes.
 class BloodPressureRecord {
   final int systolic;
   final int diastolic;
@@ -37,7 +41,10 @@ class BloodPressureRecord {
       color: Color(map['color']),
     );
   }
-
+  // Determines the blood pressure category based on systolic and diastolic values.
+  // [systolic]: The systolic blood pressure value
+  // [diastolic]: The diastolic blood pressure value
+  // Returns a String representing the blood pressure category
   static String getCategory(int systolic, int diastolic) {
     if (systolic < 120 && diastolic < 80) return "Normal";
     if (systolic >= 120 && systolic < 130 && diastolic < 80) return "Elevated";
@@ -49,7 +56,10 @@ class BloodPressureRecord {
     if (systolic > 180 || diastolic > 120) return "Hypertensive Crisis";
     return "Not in range";
   }
-
+  
+  // Gets the color associated with a blood pressure category. 
+  // [category]: The blood pressure category string
+  // Returns a Color object representing the category
   static Color getColorForCategory(String category) {
     switch (category) {
       case "Normal":
@@ -71,7 +81,9 @@ class BloodPressureRecord {
     return DateFormat('dd MMM yyyy HH:mm').format(date);
   }
 }
-
+// A Flutter widget that displays blood pressure records in a list and chart.
+// This screen shows blood pressure readings in both a bar chart and a list view,
+// with search functionality to filter by month.
 class BloodPressureScreen extends StatefulWidget {
   const BloodPressureScreen({Key? key}) : super(key: key);
 
@@ -99,7 +111,9 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
     _searchController.dispose();
     super.dispose();
   }
-
+  // Fetches blood pressure data from the shared timeline entries. 
+  // Scans through saved timeline entries to extract blood pressure readings.
+  // Returns a Future that completes with a list of BloodPressureRecord objects.
   Future<List<BloodPressureRecord>> fetchBloodPressureDataFromTimeline() async {
     final prefs = await SharedPreferences.getInstance();
     final timelineTexts = prefs.getStringList('savedTexts') ?? [];
@@ -145,7 +159,7 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
     }
     return bloodPressureReadings;
   }
-
+  // Loads initial data and updates the UI state.
   Future<void> _loadInitialData() async {
     // Always get fresh data from timeline, don't use saved blood_pressure_records
     final timelineData = await fetchBloodPressureDataFromTimeline();
@@ -227,7 +241,8 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
       _showMonthSuggestions = false;
     });
   }
-
+  // Builds the month navigation header with search functionality. 
+  // Returns a widget containing the search field and month suggestions.
   Widget _buildMonthNavigationHeader() {
     // Show all available months when search is not empty
     final List<String> monthSuggestions =
@@ -305,7 +320,8 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
       ),
     );
   }
-
+   // Builds the blood pressure bar chart.
+  // Returns a widget displaying a bar chart of blood pressure readings
   Widget _buildBarChart() {
     final displayRecords = _showSearchResults
         ? _searchResults.map((index) => records[index]).toList()
@@ -426,7 +442,9 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
       ),
     );
   }
-
+  // Builds a section header for a group of records from the same month. 
+  // [date]: The date representing the month/year for this section
+  // Returns a widget displaying the month/year header
   Widget _buildDateSectionHeader(DateTime date) {
     return Padding(
       padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 16),
@@ -450,7 +468,9 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
       ),
     );
   }
-
+  // Gets a distinct color for each month for visual separation.
+  // [date]: The date to get a color for
+  // Returns a Color object based on the month
   Color _getMonthColor(DateTime date) {
     final List<Color> colors = [
       Colors.blue.shade300,
@@ -468,7 +488,9 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
     ];
     return colors[date.month - 1];
   }
-
+  // Builds a widget for a single blood pressure record. 
+  // [record]: The BloodPressureRecord to display
+  // Returns a ListTile widget showing the record details
   Widget _buildRecordItem(BloodPressureRecord record) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -479,7 +501,8 @@ class _BloodPressureScreenState extends State<BloodPressureScreen> {
       ),
     );
   }
-
+  // Builds the list of blood pressure records.
+  // Returns a widget displaying all records, grouped by month
   Widget _buildRecordList() {
     if (records.isEmpty) {
       return Expanded(

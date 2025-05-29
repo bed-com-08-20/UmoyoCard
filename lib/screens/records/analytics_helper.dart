@@ -49,7 +49,10 @@ class BloodSugarData {
     required this.value,
   });
 }
-
+// Extracts health metrics from timeline data using AI
+// [timelineData] The raw timeline text containing health information
+// Returns a [HealthMetrics] object containing extracted data, predictions, and tips 
+// Throws exceptions if the AI service fails or data parsing fails
 Future<HealthMetrics> extractHealthMetrics(String timelineData) async {
   final prompt = '''
 From this medical timeline, extract ALL blood pressure and blood sugar readings with their dates.
@@ -142,7 +145,9 @@ String _cleanJsonResponse(String response) {
   }
   return response.trim();
 }
-
+// Fetches timeline data from shared preferences and formats it for display 
+// [prefs] The SharedPreferences instance to read from 
+// Returns a formatted string containing the timeline data or a message if no data exists
 Future<String> fetchAndFormatTimelineData(SharedPreferences prefs) async {
   List<String> savedTexts = prefs.getStringList('savedTexts') ?? [];
   List<String> savedDates = prefs.getStringList('savedDates') ?? [];
@@ -240,7 +245,9 @@ Future<void> saveLastTimelineHash(SharedPreferences prefs, String hash) async {
 String calculateHash(String data) {
   return sha256.convert(utf8.encode(data)).toString();
 }
-
+// Triggers analytics processing if timeline data has changed
+// Checks if timeline data has changed by comparing hashes,
+// and if so, runs analysis and saves results
 Future<void> triggerAnalyticsProcessing() async {
   final prefs = await SharedPreferences.getInstance();
   final currentTimeline = await fetchAndFormatTimelineData(prefs);
@@ -262,6 +269,9 @@ Future<void> triggerAnalyticsProcessing() async {
 }
 
 // ================== NEW CACHING FUNCTIONS ================== //
+// Saves health metrics to shared preferences 
+// [prefs] The SharedPreferences instance to write to
+// [metrics] The HealthMetrics object to save
 
 Future<void> saveHealthMetrics(
     SharedPreferences prefs, HealthMetrics metrics) async {
@@ -287,7 +297,9 @@ Future<void> saveHealthMetrics(
         'sugarTip': metrics.bloodSugarTip,
       }));
 }
-
+// Loads saved health metrics from shared preferences 
+// [prefs] The SharedPreferences instance to read from
+// Returns a HealthMetrics object or null if none exists
 Future<HealthMetrics?> loadSavedHealthMetrics(SharedPreferences prefs) async {
   final savedMetricsJson = prefs.getString('savedHealthMetrics');
   if (savedMetricsJson == null) return null;
@@ -326,6 +338,9 @@ Future<HealthMetrics?> loadSavedHealthMetrics(SharedPreferences prefs) async {
 }
 
 // Enhanced version of triggerAnalyticsProcessing that also saves metrics
+//Triggers complete analytics processing including metrics extraction
+// Checks if timeline data has changed, and if so, runs full analysis,
+/// extracts metrics, and saves all results
 Future<void> triggerCompleteAnalyticsProcessing() async {
   final prefs = await SharedPreferences.getInstance();
   final currentTimeline = await fetchAndFormatTimelineData(prefs);

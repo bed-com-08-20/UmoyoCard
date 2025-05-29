@@ -75,7 +75,11 @@ class BloodSugarRecord {
     return DateFormat('dd MMM, HH:mm').format(date);
   }
 }
-
+// The main screen for displaying and managing blood sugar records 
+// This screen shows:
+// - A search bar for filtering by month
+// - A bar chart overview of readings
+// - A detailed list of all readings grouped by month
 class BloodSugarScreen extends StatefulWidget {
   const BloodSugarScreen({Key? key}) : super(key: key);
 
@@ -105,6 +109,9 @@ class _BloodSugarScreenState extends State<BloodSugarScreen> {
   }
 
   // Fetch blood sugar data from timeline texts in SharedPreferences
+   // Scans saved timeline entries for blood sugar readings using regex pattern matching.
+  // Handles unit conversion (mg/dL to mmol/L) and data validation.
+  // Returns a list of BloodSugarRecord objects
   Future<List<BloodSugarRecord>> fetchBloodSugarDataFromTimeline() async {
     final prefs = await SharedPreferences.getInstance();
     final timelineTexts = prefs.getStringList('savedTexts') ?? [];
