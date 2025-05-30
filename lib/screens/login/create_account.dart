@@ -168,27 +168,27 @@ class _CreateAccountFormState extends State<CreateAccountForm> {
           TextFormField(
             controller: _surnameController,
             decoration: InputDecoration(
-              labelText: "Surname*",
-              errorText: _errorMessages['surname'],
+              labelText: "First Name*",
+              errorText: _errorMessages['First Name'],
               border: const OutlineInputBorder(),
             ),
             validator: (value) =>
                 value?.isEmpty ?? true ? "Required field" : null,
             onChanged: (value) =>
-                setState(() => _errorMessages['surname'] = null),
+                setState(() => _errorMessages['First Name'] = null),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _firstNameController,
             decoration: InputDecoration(
-              labelText: "First Name*",
-              errorText: _errorMessages['firstName'],
+              labelText: "Surname*",
+              errorText: _errorMessages['Surname'],
               border: const OutlineInputBorder(),
             ),
             validator: (value) =>
                 value?.isEmpty ?? true ? "Required field" : null,
             onChanged: (value) =>
-                setState(() => _errorMessages['firstName'] = null),
+                setState(() => _errorMessages['Surname'] = null),
           ),
           const SizedBox(height: 16),
           TextFormField(

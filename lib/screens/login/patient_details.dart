@@ -20,12 +20,9 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   Map<String, dynamic>? _patientData;
   bool _isLoading = true;
   String? _errorMessage;
-  String? _documentContent;
-  String? _documentContentType;
-  Uint8List? _documentBytes;
-  bool _isFetchingDocument = false;
-  String? _documentError;
-  String? _pdfFilePath;
+  List<Map<String, dynamic>> _documents = []; // Stores all documents
+  bool _isFetchingDocuments = false;
+  String? _documentsError;
 
   static const String _fhirServerBaseUrl = 'http://localhost:8080/fhir';
   static final _headers = {
@@ -36,14 +33,8 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchPatientDataAndRelatedDocument();
-  }
-
-  Future<void> _fetchPatientDataAndRelatedDocument() async {
-    await _fetchPatientData();
-    if (_patientData != null && _hasPatientDataToShow()) {
-      await _fetchFirstRelevantDocument();
-    }
+    _fetchPatientData();
+    _fetchAllDocuments();
   }
 
   Future<void> _fetchPatientData() async {
@@ -72,115 +63,82 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
 
   bool _hasPatientDataToShow() {
     if (_patientData == null) return false;
-
-    final name = FHIRResourceParser.getPatientName(_patientData);
-    final gender = FHIRResourceParser.getPatientGender(_patientData);
-    final birthDate = FHIRResourceParser.getPatientBirthDate(_patientData);
-    final phones = FHIRResourceParser.getPatientPhoneNumbers(_patientData);
-    final emails = FHIRResourceParser.getPatientEmails(_patientData);
-    final address = FHIRResourceParser.getPatientAddress(_patientData);
-
-    return name.isNotEmpty ||
-        gender.isNotEmpty ||
-        birthDate.isNotEmpty ||
-        phones.isNotEmpty ||
-        emails.isNotEmpty ||
-        address.isNotEmpty;
+    return FHIRResourceParser.getPatientName(_patientData).isNotEmpty ||
+        FHIRResourceParser.getPatientGender(_patientData).isNotEmpty ||
+        FHIRResourceParser.getPatientBirthDate(_patientData).isNotEmpty ||
+        FHIRResourceParser.getPatientPhoneNumbers(_patientData).isNotEmpty ||
+        FHIRResourceParser.getPatientEmails(_patientData).isNotEmpty ||
+        FHIRResourceParser.getPatientAddress(_patientData).isNotEmpty;
   }
 
-  Future<void> _fetchFirstRelevantDocument() async {
+  Future<void> _fetchAllDocuments() async {
     final searchUrl =
         '$_fhirServerBaseUrl/DocumentReference?subject=Patient/${widget.patientId}';
     setState(() {
-      _isFetchingDocument = true;
-      _documentError = null;
-      _documentContent = null;
-      _documentBytes = null;
-      _documentContentType = null;
-      _pdfFilePath = null;
+      _isFetchingDocuments = true;
+      _documentsError = null;
+      _documents.clear();
     });
+
     try {
       final response = await http.get(Uri.parse(searchUrl), headers: _headers);
       if (response.statusCode == 200) {
         final searchResult = jsonDecode(response.body);
         final entryList = searchResult['entry'] as List?;
-        if (entryList != null && entryList.isNotEmpty) {
-          final firstDocumentReference = entryList.first['resource'];
-          if (firstDocumentReference != null &&
-              firstDocumentReference['content'] != null &&
-              firstDocumentReference['content'].isNotEmpty &&
-              firstDocumentReference['content'][0]['attachment'] != null) {
-            final attachment =
-                firstDocumentReference['content'][0]['attachment'];
-            final base64Data = attachment['data'] as String?;
-            final contentType = attachment['contentType'] as String?;
 
-            if (base64Data != null && base64Data.isNotEmpty) {
-              try {
-                final decodedBytes = base64Decode(base64Data);
-                setState(() {
-                  _documentBytes = decodedBytes;
-                  _documentContentType = contentType;
-                  _isFetchingDocument = false;
-                  _documentError = null;
-                  if (contentType == 'text/plain') {
-                    _documentContent = utf8.decode(decodedBytes);
-                  }
-                });
-                if (contentType == 'application/pdf') {
-                  await _savePdfToTemporaryFile(decodedBytes);
+        if (entryList != null && entryList.isNotEmpty) {
+          for (final entry in entryList) {
+            final docRef = entry['resource'];
+            if (docRef != null &&
+                docRef['content'] != null &&
+                docRef['content'].isNotEmpty) {
+              final attachment = docRef['content'][0]['attachment'];
+              final base64Data = attachment['data'] as String?;
+              final contentType = attachment['contentType'] as String?;
+
+              if (base64Data != null && base64Data.isNotEmpty) {
+                try {
+                  final decodedBytes = base64Decode(base64Data);
+                  _documents.add({
+                    'bytes': decodedBytes,
+                    'type': contentType,
+                    'content': contentType == 'text/plain'
+                        ? utf8.decode(decodedBytes)
+                        : null,
+                  });
+                } catch (e) {
+                  print('Error decoding document: $e');
                 }
-              } catch (e) {
-                setState(() {
-                  _documentError = 'Error decoding document content: $e';
-                  _isFetchingDocument = false;
-                });
               }
-            } else {
-              setState(() {
-                _documentError = 'No embedded document data found.';
-                _isFetchingDocument = false;
-              });
             }
-          } else {
-            setState(() {
-              _documentError = 'No attachment found in the DocumentReference.';
-              _isFetchingDocument = false;
-            });
           }
-        } else {
-          setState(() {
-            _documentContent = 'No DocumentReference found for this patient.';
-            _isFetchingDocument = false;
-          });
         }
       } else {
         setState(() {
-          _documentError =
-              'Failed to search for DocumentReference: Status ${response.statusCode}';
-          _isFetchingDocument = false;
+          _documentsError =
+              'Failed to fetch documents: Status ${response.statusCode}';
         });
       }
     } catch (e) {
       setState(() {
-        _documentError = 'Error searching for DocumentReference: $e';
-        _isFetchingDocument = false;
+        _documentsError = 'Error fetching documents: $e';
+      });
+    } finally {
+      setState(() {
+        _isFetchingDocuments = false;
       });
     }
   }
 
-  Future<void> _savePdfToTemporaryFile(Uint8List pdfBytes) async {
+  Future<String> _savePdfToTemporaryFile(Uint8List pdfBytes) async {
     try {
       final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/document.pdf');
+      final file = File(
+          '${tempDir.path}/document_${DateTime.now().millisecondsSinceEpoch}.pdf');
       await file.writeAsBytes(pdfBytes);
-      setState(() {
-        _pdfFilePath = file.path;
-      });
+      return file.path;
     } catch (e) {
-      setState(() {
-        _documentError = 'Error saving PDF to temporary file: $e';
-      });
+      throw 'Error saving PDF: $e';
     }
   }
 
@@ -213,19 +171,10 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
       return Center(child: Text(_errorMessage!));
     }
 
-    if (_patientData == null) {
+    if (_patientData == null || !_hasPatientDataToShow()) {
       return const Center(
         child: Text(
           'No patient data available.',
-          style: TextStyle(fontSize: 16),
-        ),
-      );
-    }
-
-    if (!_hasPatientDataToShow()) {
-      return const Center(
-        child: Text(
-          'No patient data available to display.',
           style: TextStyle(fontSize: 16),
         ),
       );
@@ -267,44 +216,73 @@ class _PatientDetailsScreenState extends State<PatientDetailsScreen> {
             Text(
                 'Address: ${FHIRResourceParser.getPatientAddress(_patientData)}'),
             const SizedBox(height: 16),
-            const Text('Document Content:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            _buildDocumentContent(),
+            _buildDocumentsSection(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDocumentContent() {
-    if (_isFetchingDocument) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_documentError != null) {
-      return Text('Error fetching document: $_documentError',
-          style: const TextStyle(color: Colors.red));
-    }
-    if (_documentContentType == 'text/plain' && _documentContent != null) {
-      return Text(_documentContent!);
-    }
-    if (_documentContentType == 'application/pdf' && _pdfFilePath != null) {
-      return SizedBox(
-        height: 400,
-        child: PDFView(
-          filePath: _pdfFilePath!,
-          enableSwipe: true,
-          swipeHorizontal: false,
-          autoSpacing: false,
-          pageSnap: true,
-          pageFling: false,
+  Widget _buildDocumentsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Documents:', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        if (_isFetchingDocuments)
+          const Center(child: CircularProgressIndicator()),
+        if (_documentsError != null)
+          Text('Error: $_documentsError',
+              style: const TextStyle(color: Colors.red)),
+        if (!_isFetchingDocuments && _documents.isEmpty)
+          const Text('No documents available.'),
+        ..._documents.map((doc) => _buildDocumentCard(doc)).toList(),
+      ],
+    );
+  }
+
+  Widget _buildDocumentCard(Map<String, dynamic> document) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Type: ${document['type'] ?? 'Unknown'}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            if (document['type'] == 'text/plain' && document['content'] != null)
+              Text(document['content']),
+            if (document['type'] == 'application/pdf')
+              FutureBuilder<String>(
+                future: _savePdfToTemporaryFile(document['bytes']),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return SizedBox(
+                      height: 400,
+                      child: PDFView(
+                        filePath: snapshot.data!,
+                        enableSwipe: true,
+                        swipeHorizontal: false,
+                        autoSpacing: false,
+                        pageSnap: false,
+                        pageFling: false,
+                      ),
+                    );
+                  } else if (snapshot.hasError) {
+                    return Text('Error loading PDF: ${snapshot.error}');
+                  }
+                  return const CircularProgressIndicator();
+                },
+              ),
+            if (document['type']?.startsWith('image/') == true)
+              Image.memory(document['bytes']),
+          ],
         ),
-      );
-    }
-    if (_documentContentType?.startsWith('image/') == true &&
-        _documentBytes != null) {
-      return Image.memory(_documentBytes!);
-    }
-    return const Text('No document content available.');
+      ),
+    );
   }
 }

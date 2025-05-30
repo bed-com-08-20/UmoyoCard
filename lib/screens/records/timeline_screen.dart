@@ -5,8 +5,8 @@ import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-import 'package:umoyocard/screens/records/analytics_helper.dart'
-    as analytics_helper;
+// import 'package:umoyocard/screens/records/analytics_helper.dart'
+//     as analytics_helper;
 
 class TimelineScreen extends StatefulWidget {
   const TimelineScreen({super.key});
@@ -135,45 +135,45 @@ class _TimelineScreenState extends State<TimelineScreen> {
     });
   }
 
-  Future<void> _exportToPdf(String? text, String? imagePath) async {
-    final pdf = pw.Document();
-    pdf.addPage(
-      pw.Page(build: (pw.Context context) {
-        final widgets = <pw.Widget>[];
-        if (text != null) {
-          widgets.add(pw.Text(text));
-        }
-        if (imagePath != null) {
-          try {
-            final imageFile = File(imagePath);
-            if (imageFile.existsSync()) {
-              final image = pw.MemoryImage(imageFile.readAsBytesSync());
-              widgets.add(pw.SizedBox(height: 20));
-              widgets.add(pw.Image(image));
-            } else {
-              widgets.add(pw.Text(
-                  'Image not found: ${imagePath.split('/').last}',
-                  style: const pw.TextStyle(color: PdfColors.red)));
-            }
-          } catch (e) {
-            widgets.add(pw.Text('Error loading image: $e',
-                style: const pw.TextStyle(color: PdfColors.red)));
-          }
-        }
-        return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start, children: widgets);
-      }),
-    );
-    try {
-      await Printing.layoutPdf(
-          onLayout: (PdfPageFormat format) async => pdf.save());
-    } catch (e) {
-      // Show an error message to the user
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate PDF: $e')),
-      );
-    }
-  }
+  // Future<void> _exportToPdf(String? text, String? imagePath) async {
+  //   final pdf = pw.Document();
+  //   pdf.addPage(
+  //     pw.Page(build: (pw.Context context) {
+  //       final widgets = <pw.Widget>[];
+  //       if (text != null) {
+  //         widgets.add(pw.Text(text));
+  //       }
+  //       if (imagePath != null) {
+  //         try {
+  //           final imageFile = File(imagePath);
+  //           if (imageFile.existsSync()) {
+  //             final image = pw.MemoryImage(imageFile.readAsBytesSync());
+  //             widgets.add(pw.SizedBox(height: 20));
+  //             widgets.add(pw.Image(image));
+  //           } else {
+  //             widgets.add(pw.Text(
+  //                 'Image not found: ${imagePath.split('/').last}',
+  //                 style: const pw.TextStyle(color: PdfColors.red)));
+  //           }
+  //         } catch (e) {
+  //           widgets.add(pw.Text('Error loading image: $e',
+  //               style: const pw.TextStyle(color: PdfColors.red)));
+  //         }
+  //       }
+  //       return pw.Column(
+  //           crossAxisAlignment: pw.CrossAxisAlignment.start, children: widgets);
+  //     }),
+  //   );
+  //   try {
+  //     await Printing.layoutPdf(
+  //         onLayout: (PdfPageFormat format) async => pdf.save());
+  //   } catch (e) {
+  //     // Show an error message to the user
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to generate PDF: $e')),
+  //     );
+  //   }
+  // }
 
   void _showFullImage(String imagePath) {
     if (!File(imagePath).existsSync()) {
@@ -282,18 +282,18 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.picture_as_pdf),
-                        onPressed: () => _exportToPdf(
-                          hasText ? savedTexts[index] : null,
-                          hasImage ? savedImages[index] : null,
-                        ),
-                      ),
-                      IconButton(
-                        icon:
-                            const Icon(Icons.delete_forever, color: Colors.red),
-                        onPressed: () => _confirmDelete(index),
-                      ),
+                      // IconButton(
+                      //   icon: const Icon(Icons.picture_as_pdf),
+                      //   onPressed: () => _exportToPdf(
+                      //     hasText ? savedTexts[index] : null,
+                      //     hasImage ? savedImages[index] : null,
+                      //   ),
+                      // ),
+                      // IconButton(
+                      //   icon:
+                      //       const Icon(Icons.delete_forever, color: Colors.red),
+                      //   onPressed: () => _confirmDelete(index),
+                      // ),
                     ],
                   ),
                 ],
@@ -445,66 +445,66 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  void _deleteItem(int index) async {
-    if (index < 0 || index >= savedTexts.length) return;
+  // void _deleteItem(int index) async {
+  //   if (index < 0 || index >= savedTexts.length) return;
 
-    if (index < savedImages.length && savedImages[index].isNotEmpty) {
-      final imagePath = savedImages[index];
-      final imageFile = File(imagePath);
-      if (await imageFile.exists()) {
-        try {
-          await imageFile.delete();
-          print('Deleted image file: $imagePath');
-        } catch (e) {
-          print('Error deleting image file $imagePath: $e');
-        }
-      }
-    }
+  //   if (index < savedImages.length && savedImages[index].isNotEmpty) {
+  //     final imagePath = savedImages[index];
+  //     final imageFile = File(imagePath);
+  //     if (await imageFile.exists()) {
+  //       try {
+  //         await imageFile.delete();
+  //         print('Deleted image file: $imagePath');
+  //       } catch (e) {
+  //         print('Error deleting image file $imagePath: $e');
+  //       }
+  //     }
+  //   }
 
-    setState(() {
-      savedTexts.removeAt(index);
-      if (index < savedImages.length) savedImages.removeAt(index);
-      if (index < savedDates.length) savedDates.removeAt(index);
+  //   setState(() {
+  //     savedTexts.removeAt(index);
+  //     if (index < savedImages.length) savedImages.removeAt(index);
+  //     if (index < savedDates.length) savedDates.removeAt(index);
 
-      while (savedImages.length > savedTexts.length) savedImages.removeLast();
-      while (savedDates.length > savedTexts.length) savedDates.removeLast();
-    });
+  //     while (savedImages.length > savedTexts.length) savedImages.removeLast();
+  //     while (savedDates.length > savedTexts.length) savedDates.removeLast();
+  //   });
 
-    await _updatePreferences();
+  //   await _updatePreferences();
 
-    //analytics_helper.triggerAnalyticsProcessing();
-    analytics_helper.triggerCompleteAnalyticsProcessing();
+  //   //analytics_helper.triggerAnalyticsProcessing();
+  //   analytics_helper.triggerCompleteAnalyticsProcessing();
 
-    _loadSavedData();
-  }
+  //   _loadSavedData();
+  // }
 
-  void _confirmDelete(int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Delete'), // Added const
-          content: const Text(
-              'Are you sure you want to delete this entry?'), // Added const
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'), // Added const
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss dialog
-              },
-            ),
-            TextButton(
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                _deleteItem(index);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // void _confirmDelete(int index) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Confirm Delete'), // Added const
+  //         content: const Text(
+  //             'Are you sure you want to delete this entry?'), // Added const
+  //         actions: <Widget>[
+  //           TextButton(
+  //             child: const Text('Cancel'), // Added const
+  //             onPressed: () {
+  //               Navigator.of(context).pop(); // Dismiss dialog
+  //             },
+  //           ),
+  //           TextButton(
+  //             child: const Text('Delete', style: TextStyle(color: Colors.red)),
+  //             onPressed: () {
+  //               _deleteItem(index);
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -544,7 +544,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          'Timeline',
+          'Health Passport',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,

@@ -1,0 +1,2 @@
+C:/Users/wadim/OneDrive/Documents/projects/ict_finale_project/UmoyoCard/android/app/.cxx/RelWithDebInfo/2c364t81/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/wadim/OneDrive/Documents/projects/ict_finale_project/UmoyoCard/android/app/.cxx/RelWithDebInfo/2c364t81/x86_64/CMakeFiles/rebuild_cache.dir

@@ -204,11 +204,11 @@ class _HomeContentState extends State<HomeContent> {
     _loadUserName(); // Load the user's name when the screen starts
   }
 
-  // Fetch the user's name from SharedPreferences
   Future<void> _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      userName = prefs.getString('userName') ?? "User";
+      String fullName = prefs.getString('userName') ?? "User";
+      userName = fullName.split(' ').first;
     });
   }
 
@@ -218,11 +218,13 @@ class _HomeContentState extends State<HomeContent> {
       child: Padding(
         padding: EdgeInsets.all(4.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              'Hi $userName, welcome back!', // Dynamic name display
-              style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+            Center(
+              child: Text(
+                'Hi $userName, welcome back!',
+                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+              ),
             ),
             SizedBox(height: 16.0),
             Text(
@@ -489,7 +491,7 @@ class _RecentTimelineCardState extends State<RecentTimelineCard> {
             SizedBox(height: 16.0),
             if (_date.isNotEmpty) ...[
               Text(
-                "Here is your latest hospital visit:",
+                "Here is your latest hospital visit date:",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13.0,
